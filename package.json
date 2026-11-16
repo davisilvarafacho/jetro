@@ -6,14 +6,20 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "create-user": "tsx scripts/create-user.ts",
+    "db:migrate": "prisma migrate dev",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@mantine/core": "^9.8.1",
     "@mantine/hooks": "^9.8.1",
     "@mantine/notifications": "^9.8.1",
+    "@prisma/adapter-better-sqlite3": "7.10.1",
+    "@prisma/client": "7.10.1",
     "@tabler/icons-react": "^3.52.0",
     "bcryptjs": "^3.0.3",
+    "dotenv": "^18.0.10",
     "jose": "^6.2.17",
     "next": "16.4.6",
     "react": "19.3.0",
@@ -29,6 +35,8 @@
     "postcss": "^8.5.33",
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
+    "prisma": "7.10.1",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   },
   "packageManager": "pnpm@12.10.1"

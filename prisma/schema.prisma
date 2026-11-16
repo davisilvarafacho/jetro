@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model Member {
+  id          Int        @id @default(autoincrement())
+  cpf         String     @unique
+  firstName   String
+  lastName    String
+  leaderId    Int?
+  leader      Member?    @relation("Lideranca", fields: [leaderId], references: [id], onDelete: Restrict)
+  liderados   Member[]   @relation("Lideranca")
+  parcaId     Int?
+  parca       Member?    @relation("Parca", fields: [parcaId], references: [id], onDelete: Restrict)
+  parcaDe     Member[]   @relation("Parca")
+  ministerios Ministry[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Ministry {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  leaderId  Int
+  leader    Member   @relation(fields: [leaderId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
