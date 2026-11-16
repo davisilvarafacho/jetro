@@ -16,26 +16,62 @@ model User {
 }
 
 model Member {
-  id          Int        @id @default(autoincrement())
-  cpf         String     @unique
-  firstName   String
-  lastName    String
-  leaderId    Int?
-  leader      Member?    @relation("Lideranca", fields: [leaderId], references: [id], onDelete: Restrict)
-  liderados   Member[]   @relation("Lideranca")
-  parcaId     Int?
-  parca       Member?    @relation("Parca", fields: [parcaId], references: [id], onDelete: Restrict)
-  parcaDe     Member[]   @relation("Parca")
-  ministerios Ministry[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id            Int              @id @default(autoincrement())
+  cpf           String           @unique
+  firstName     String
+  lastName      String
+  leaderId      Int?
+  leader        Member?          @relation("Lideranca", fields: [leaderId], references: [id], onDelete: Restrict)
+  liderados     Member[]         @relation("Lideranca")
+  parcaId       Int?
+  parca         Member?          @relation("Parca", fields: [parcaId], references: [id], onDelete: Restrict)
+  parcaDe       Member[]         @relation("Parca")
+  ministerios   Ministry[]
+  celulas       Cell[]
+  ministryLinks MinistryMember[]
+  cellLinks     CellMember[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 }
 
 model Ministry {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
+  id        Int              @id @default(autoincrement())
+  name      String           @unique
   leaderId  Int
-  leader    Member   @relation(fields: [leaderId], references: [id], onDelete: Restrict)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  leader    Member           @relation(fields: [leaderId], references: [id], onDelete: Restrict)
+  members   MinistryMember[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model Cell {
+  id        Int          @id @default(autoincrement())
+  name      String       @unique
+  leaderId  Int
+  leader    Member       @relation(fields: [leaderId], references: [id], onDelete: Restrict)
+  members   CellMember[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model MinistryMember {
+  id         Int      @id @default(autoincrement())
+  ministryId Int
+  ministry   Ministry @relation(fields: [ministryId], references: [id], onDelete: Cascade)
+  memberId   Int
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  role       Int      @default(3)
+
+  @@unique([ministryId, memberId])
+}
+
+model CellMember {
+  id       Int    @id @default(autoincrement())
+  cellId   Int
+  cell     Cell   @relation(fields: [cellId], references: [id], onDelete: Cascade)
+  memberId Int
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  role     Int    @default(3)
+
+  @@unique([cellId, memberId])
 }
