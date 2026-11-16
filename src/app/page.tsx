@@ -1,9 +1,5 @@
-import { Button } from "@mantine/core";
+import { redirect } from 'next/navigation'
 
 export default function Home() {
-  return (
-    <main style={{ padding: 32 }}>
-      <Button>Entrar</Button>
-    </main>
-  );
+  redirect('/membros')
 }
