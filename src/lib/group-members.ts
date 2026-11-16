@@ -1,5 +1,5 @@
 import type { Prisma } from '@/generated/prisma/client'
-import { GROUP_ROLE, type AssignableRole } from '@/lib/group-roles'
+import { GROUP_ROLE, isAssignableRole, type AssignableRole } from '@/lib/group-roles'
 
 export type GroupKind = 'ministry' | 'cell'
 export type Tx = Prisma.TransactionClient
@@ -35,7 +35,7 @@ function linksOf(tx: Tx, kind: GroupKind) {
   }
 }
 
-// FUTURO: módulo de logs — registrar aqui as mudanças de papel e entradas/saídas do grupo.
+// FUTURO: módulo de logs registrará estas mudanças automaticamente.
 export async function saveGroupMembers(
   tx: Tx,
   kind: GroupKind,
@@ -57,6 +57,8 @@ export async function saveGroupMembers(
 
   const desired = new Map<number, number>([[leaderId, GROUP_ROLE.Leader]])
   for (const m of members) {
+    // role=1 só vem de leaderId; ignora qualquer outro papel vindo de fora.
+    if (!isAssignableRole(m.role)) continue
     if (desired.has(m.memberId) || !existingIds.has(m.memberId)) continue
     desired.set(m.memberId, m.role)
   }

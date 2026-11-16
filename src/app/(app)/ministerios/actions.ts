@@ -2,6 +2,9 @@
 
 import { revalidatePath } from 'next/cache'
 import { Prisma } from '@/generated/prisma/client'
+import { z } from 'zod'
+import { isAssignableRole } from '@/lib/group-roles'
+import { saveGroupMembers } from '@/lib/group-members'
 import { prisma } from '@/lib/prisma'
 import { requireUser } from '@/lib/session'
 
@@ -11,6 +14,22 @@ export type MinistryFormState = { ok?: boolean; errors?: Partial<Record<Field, s
 function positiveId(value: FormDataEntryValue | null): number | null {
   const n = typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : NaN
   return Number.isInteger(n) && n > 0 ? n : null
+}
+
+const membersSchema = z.array(
+  z.object({
+    memberId: z.number().int().positive(),
+    role: z.custom<2 | 3>(isAssignableRole),
+  }),
+)
+
+function parseMembers(value: FormDataEntryValue | null) {
+  try {
+    const parsed = membersSchema.safeParse(JSON.parse(String(value ?? '[]')))
+    return parsed.success ? parsed.data : []
+  } catch {
+    return []
+  }
 }
 
 const DUPLICATE_NAME = 'Já existe um ministério com este nome'
@@ -40,10 +59,24 @@ export async function saveMinistry(
 
   if (Object.keys(errors).length > 0 || !leader) return { errors }
 
+  const members = parseMembers(formData.get('members'))
   const data = { name, leaderId: leader.id }
   try {
-    if (id !== null) await prisma.ministry.update({ where: { id }, data })
-    else await prisma.ministry.create({ data })
+    await prisma.$transaction(async (tx) => {
+      const previous =
+        id === null
+          ? null
+          : await tx.ministry.findUnique({ where: { id }, select: { leaderId: true } })
+      const saved =
+        id === null
+          ? await tx.ministry.create({ data })
+          : await tx.ministry.update({ where: { id }, data })
+      await saveGroupMembers(tx, 'ministry', saved.id, {
+        leaderId: leader.id,
+        previousLeaderId: previous?.leaderId ?? null,
+        members,
+      })
+    })
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return { errors: { name: DUPLICATE_NAME } }

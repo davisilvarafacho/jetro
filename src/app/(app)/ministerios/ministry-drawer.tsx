@@ -3,12 +3,18 @@
 import { useActionState, useState } from 'react'
 import { Button, Drawer, Select, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { GroupMembersField, type GroupMemberEntry } from '@/components/group-members-field'
 import { fullName } from '@/lib/person-name'
 import { saveMinistry, type MinistryFormState } from './actions'
 import classes from './ministry-drawer.module.css'
 
 type PersonRef = { id: number; firstName: string; lastName: string }
-export type MinistryRow = { id: number; name: string; leader: PersonRef }
+export type MinistryRow = {
+  id: number
+  name: string
+  leader: PersonRef
+  members: GroupMemberEntry[]
+}
 
 const initialState: MinistryFormState = {}
 
@@ -29,6 +35,7 @@ function MinistryForm({ ministry, members, onClose }: FormProps) {
   // Campos controlados: a ação reinicia o formulário e apagaria o que foi digitado quando há erro.
   const [name, setName] = useState(ministry?.name ?? '')
   const [leaderId, setLeaderId] = useState<string | null>(ministry ? String(ministry.leader.id) : null)
+  const [entries, setEntries] = useState<GroupMemberEntry[]>(ministry?.members ?? [])
   // Esconde o erro de um campo assim que ele é editado; volta a valer no próximo envio.
   const [edited, setEdited] = useState<{ state: MinistryFormState; fields: string[] }>({
     state,
@@ -73,10 +80,20 @@ function MinistryForm({ ministry, members, onClose }: FormProps) {
             value={leaderId}
             onChange={(value) => {
               setLeaderId(value)
+              // Quem vira líder sai da lista de membros; o líder anterior é tratado ao salvar.
+              setEntries((list) => list.filter((e) => String(e.memberId) !== value))
               touch('leaderId')
             }}
             error={errorFor('leaderId')}
             searchable
+          />
+        )}
+        {members.length > 0 && (
+          <GroupMembersField
+            candidates={members}
+            leaderId={leaderId}
+            value={entries}
+            onChange={setEntries}
           />
         )}
       </div>

@@ -1,0 +1,41 @@
+.field {
+  display: grid;
+  gap: 12px;
+}
+
+.list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 8px;
+  border-radius: 16px;
+  background: #f4f8f4;
+}
+
+.row > :first-child {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+}
+
+.role {
+  width: 132px;
+  flex: none;
+}
+
+.remove {
+  color: #5c6c65;
+}
+
+.remove:hover {
+  background: #fdecee;
+  color: #c42d3a;
+}
