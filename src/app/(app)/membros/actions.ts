@@ -12,7 +12,7 @@ import {
 } from '@/lib/members'
 import { fullName } from '@/lib/person-name'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/session'
+import { requireUser } from '@/lib/session'
 
 type Field = 'cpf' | 'firstName' | 'lastName' | 'leaderId' | 'parcaId'
 export type MemberFormState = { ok?: boolean; errors?: Partial<Record<Field, string>> }
@@ -25,10 +25,6 @@ const schema = z.object({
   firstName: z.string().trim().min(1, 'Informe o nome'),
   lastName: z.string().trim().min(1, 'Informe o sobrenome'),
 })
-
-async function requireUser() {
-  if (!(await getCurrentUser())) throw new Error('Não autorizado')
-}
 
 function optionalId(value: FormDataEntryValue | null): number | null {
   const n = Number(value)

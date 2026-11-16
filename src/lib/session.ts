@@ -57,3 +57,7 @@ export const getCurrentUser = cache(async (): Promise<{ id: number; name: string
     select: { id: true, name: true },
   })
 })
+
+export async function requireUser(): Promise<void> {
+  if (!(await getCurrentUser())) throw new Error('Não autorizado')
+}
