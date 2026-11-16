@@ -6,7 +6,6 @@ export async function proxy(req: NextRequest) {
   const isLogin = req.nextUrl.pathname === '/login'
 
   if (!session && !isLogin) return NextResponse.redirect(new URL('/login', req.url))
-  if (session && isLogin) return NextResponse.redirect(new URL('/membros', req.url))
   return NextResponse.next()
 }
 

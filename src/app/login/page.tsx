@@ -1,4 +1,6 @@
+import { redirect } from 'next/navigation'
 import { Brand } from '@/components/brand'
+import { getCurrentUser } from '@/lib/session'
 import { LoginForm } from './login-form'
 import classes from './login.module.css'
 
@@ -50,7 +52,10 @@ function Tiers() {
   )
 }
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  // Só redireciona com usuário real; cookie órfão (usuário apagado) apenas mostra o formulário.
+  if (await getCurrentUser()) redirect('/membros')
+
   return (
     <main className={classes.login}>
       <section className={classes.panel}>
