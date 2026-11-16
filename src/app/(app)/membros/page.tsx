@@ -1,5 +1,7 @@
-import { Title } from '@mantine/core'
+import { listMembers } from '@/lib/members'
+import { MembersView } from './members-view'
 
-export default function MembrosPage() {
-  return <Title order={1}>Membros</Title>
+export default async function MembrosPage() {
+  const members = await listMembers()
+  return <MembersView members={members} />
 }

@@ -1,0 +1,73 @@
+.blockIcon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 18px;
+  border-radius: 50%;
+  background: #fdebe4;
+  color: #c9472a;
+}
+
+.blockTitle {
+  font-family: var(--mantine-font-family-headings);
+  font-size: 1.625rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.blockText {
+  margin: 10px 0 0;
+  color: #35453f;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+}
+
+.deps {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+  padding: 18px;
+  border-radius: 16px;
+  background: #f4f8f4;
+}
+
+.depsLabel {
+  margin: 0 0 8px;
+  color: #5c6c65;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.depsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hint {
+  margin: 0;
+  color: #5c6c65;
+  font-size: 0.875rem;
+}
+
+.confirmTitle {
+  font-family: var(--mantine-font-family-headings);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.confirmText {
+  margin: 0;
+  color: #35453f;
+  line-height: 1.55;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}

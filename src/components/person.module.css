@@ -1,0 +1,32 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 14px 0 4px;
+  border-radius: 999px;
+  background: #f0f5f1;
+  color: #1a2a24;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+button.pill {
+  border: 1px solid #dce4dc;
+  background: #ffffff;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+
+button.pill:hover {
+  background: #eaf1eb;
+  border-color: #b9c9be;
+}
+
+.noAvatar {
+  padding-inline-start: 14px;
+}
