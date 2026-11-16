@@ -16,6 +16,11 @@ cuidam dos demais, e (no futuro) ter inteligência e visão sobre líderes e lid
 - Cadastro de ministérios: nome e líder (um membro).
 - Comando de terminal para criar usuários.
 
+## Futuro (anotado)
+
+- **Módulo de logs** para acompanhar automaticamente as mudanças (vínculos, trocas de líder etc.).
+  Detalhes em `2026-11-16-vinculos-celulas-design.md`.
+
 ## Fora do escopo
 
 - Redefinição de senha, cadastro de usuário pela tela, perfis/permissões.
