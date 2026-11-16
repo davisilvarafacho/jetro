@@ -1,3 +1,8 @@
 body {
   background: #ECF1EA;
 }
+
+/* DESIGN.md spacing.input: campos com 48px de altura no tamanho padrão (md) */
+.mantine-Input-wrapper {
+  --input-height-md: calc(3rem * var(--mantine-scale));
+}

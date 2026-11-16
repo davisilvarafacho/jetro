@@ -27,5 +27,6 @@ next-env.d.ts
 # projeto
 *.db
 *.db-journal
-.env
+.env*
+!.env.example
 /src/generated/
