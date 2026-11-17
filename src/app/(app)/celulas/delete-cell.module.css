@@ -1,0 +1,19 @@
+.confirmTitle {
+  font-family: var(--mantine-font-family-headings);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.confirmText {
+  margin: 0;
+  color: #35453f;
+  line-height: 1.55;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}

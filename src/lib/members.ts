@@ -19,6 +19,7 @@ export type Dependents = {
   liderados: { id: number; name: string }[]
   parcaDe: { id: number; name: string }[]
   ministerios: { id: number; name: string }[]
+  celulas: { id: number; name: string }[]
 }
 
 const personRef = { select: { id: true, firstName: true, lastName: true } } as const
@@ -57,7 +58,7 @@ export async function isInLeaderChainBelow(
 }
 
 export async function getDependents(id: number): Promise<Dependents> {
-  const [liderados, parcaDe, ministerios] = await Promise.all([
+  const [liderados, parcaDe, ministerios, celulas] = await Promise.all([
     prisma.member.findMany({
       where: { leaderId: id },
       orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
@@ -73,11 +74,17 @@ export async function getDependents(id: number): Promise<Dependents> {
       orderBy: { name: 'asc' },
       select: { id: true, name: true },
     }),
+    prisma.cell.findMany({
+      where: { leaderId: id },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true },
+    }),
   ])
   return {
     liderados: liderados.map((m) => ({ id: m.id, name: fullName(m) })),
     parcaDe: parcaDe.map((m) => ({ id: m.id, name: fullName(m) })),
     ministerios,
+    celulas,
   }
 }
 
@@ -93,6 +100,10 @@ export function blockedDeleteMessage(name: string, deps: Dependents): string | n
   if (deps.ministerios.length) {
     const label = deps.ministerios.length > 1 ? 'líder dos ministérios' : 'líder do ministério'
     parts.push(`${label} ${joinPt(deps.ministerios.map((d) => d.name))}`)
+  }
+  if (deps.celulas.length) {
+    const label = deps.celulas.length > 1 ? 'líder das células' : 'líder da célula'
+    parts.push(`${label} ${joinPt(deps.celulas.map((d) => d.name))}`)
   }
   if (!parts.length) return null
   return `Não é possível excluir ${name}: ${name} é ${joinPt(parts)}. Troque esses vínculos antes de excluir.`

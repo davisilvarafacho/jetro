@@ -1,0 +1,69 @@
+.root :global(.mantine-Drawer-content) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 22px 0 0 22px;
+  box-shadow: -24px 0 60px -20px rgba(0, 0, 0, 0.3);
+}
+
+.header.header {
+  align-items: flex-start;
+  gap: 16px;
+  padding: 28px 28px 20px;
+  min-height: 0;
+}
+
+.title {
+  font-family: var(--mantine-font-family-headings);
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  color: #5c6c65;
+  font-size: 1rem;
+}
+
+.body.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
+}
+
+.form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.fields {
+  display: grid;
+  flex: 1;
+  gap: 20px;
+  align-content: start;
+  overflow: auto;
+  padding: 4px 28px 28px;
+}
+
+.notice {
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: #f4f8f4;
+  color: #35453f;
+  line-height: 1.5;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 18px 28px;
+  border-top: 1px solid #dce4dc;
+}

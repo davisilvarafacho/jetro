@@ -3,11 +3,12 @@
 import { ActionIcon, Select } from '@mantine/core'
 import { IconX } from '@tabler/icons-react'
 import { PersonPill } from '@/components/person'
-import { GROUP_ROLE, isAssignableRole, roleLabel, type AssignableRole } from '@/lib/group-roles'
+import type { GroupMemberEntry } from '@/lib/group-members'
+import { GROUP_ROLE, isAssignableRole, roleLabel } from '@/lib/group-roles'
 import { fullName } from '@/lib/person-name'
 import classes from './group-members-field.module.css'
 
-export type GroupMemberEntry = { memberId: number; role: AssignableRole }
+export type { GroupMemberEntry }
 type Candidate = { id: number; firstName: string; lastName: string }
 
 type Props = {

@@ -3,6 +3,28 @@ import { GROUP_ROLE, isAssignableRole, type AssignableRole } from '@/lib/group-r
 
 export type GroupKind = 'ministry' | 'cell'
 export type Tx = Prisma.TransactionClient
+export type GroupMemberEntry = { memberId: number; role: AssignableRole }
+
+// Lê o campo `members` (JSON) do formulário item a item: um item inválido é descartado
+// sem apagar os demais; JSON inválido ou que não seja lista vira [].
+export function parseGroupMembersField(raw: FormDataEntryValue | null): GroupMemberEntry[] {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(typeof raw === 'string' ? raw : '[]')
+  } catch {
+    return []
+  }
+  if (!Array.isArray(parsed)) return []
+  const entries: GroupMemberEntry[] = []
+  for (const item of parsed) {
+    if (typeof item !== 'object' || item === null) continue
+    const { memberId, role } = item as Record<string, unknown>
+    if (typeof memberId !== 'number' || !Number.isInteger(memberId) || memberId <= 0) continue
+    if (!isAssignableRole(role)) continue
+    entries.push({ memberId, role })
+  }
+  return entries
+}
 
 type Link = { memberId: number; groupId: number; role: number }
 

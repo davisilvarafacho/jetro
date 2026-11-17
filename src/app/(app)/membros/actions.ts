@@ -98,7 +98,7 @@ export type DeleteMemberResult =
   | {
       ok: false
       message: string
-      dependents: { id: number; name: string; kind: 'liderado' | 'parca' | 'ministerio' }[]
+      dependents: { id: number; name: string; kind: 'liderado' | 'parca' | 'ministerio' | 'celula' }[]
     }
 
 function toDependentList(deps: Dependents) {
@@ -106,6 +106,7 @@ function toDependentList(deps: Dependents) {
     ...deps.liderados.map((d) => ({ ...d, kind: 'liderado' as const })),
     ...deps.parcaDe.map((d) => ({ ...d, kind: 'parca' as const })),
     ...deps.ministerios.map((d) => ({ ...d, kind: 'ministerio' as const })),
+    ...deps.celulas.map((d) => ({ ...d, kind: 'celula' as const })),
   ]
 }
 

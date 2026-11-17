@@ -2,9 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { Prisma } from '@/generated/prisma/client'
-import { z } from 'zod'
-import { isAssignableRole } from '@/lib/group-roles'
-import { saveGroupMembers } from '@/lib/group-members'
+import { parseGroupMembersField, saveGroupMembers } from '@/lib/group-members'
 import { prisma } from '@/lib/prisma'
 import { requireUser } from '@/lib/session'
 
@@ -14,22 +12,6 @@ export type MinistryFormState = { ok?: boolean; errors?: Partial<Record<Field, s
 function positiveId(value: FormDataEntryValue | null): number | null {
   const n = typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : NaN
   return Number.isInteger(n) && n > 0 ? n : null
-}
-
-const membersSchema = z.array(
-  z.object({
-    memberId: z.number().int().positive(),
-    role: z.custom<2 | 3>(isAssignableRole),
-  }),
-)
-
-function parseMembers(value: FormDataEntryValue | null) {
-  try {
-    const parsed = membersSchema.safeParse(JSON.parse(String(value ?? '[]')))
-    return parsed.success ? parsed.data : []
-  } catch {
-    return []
-  }
 }
 
 const DUPLICATE_NAME = 'Já existe um ministério com este nome'
@@ -59,7 +41,7 @@ export async function saveMinistry(
 
   if (Object.keys(errors).length > 0 || !leader) return { errors }
 
-  const members = parseMembers(formData.get('members'))
+  const members = parseGroupMembersField(formData.get('members'))
   const data = { name, leaderId: leader.id }
   try {
     await prisma.$transaction(async (tx) => {

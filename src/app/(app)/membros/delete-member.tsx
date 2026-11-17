@@ -9,7 +9,7 @@ import { PersonPill, TextPill } from '@/components/person'
 import { deleteMember } from './actions'
 import classes from './delete-member.module.css'
 
-type Dependent = { id: number; name: string; kind: 'liderado' | 'parca' | 'ministerio' }
+type Dependent = { id: number; name: string; kind: 'liderado' | 'parca' | 'ministerio' | 'celula' }
 type Blocked = { message: string; dependents: Dependent[] }
 
 type Props = {
@@ -50,6 +50,7 @@ export function DeleteMember({ id, name, iconClassName, onOpenMember }: Props) {
   const liderados = group('liderado')
   const parcaDe = group('parca')
   const ministerios = group('ministerio')
+  const celulas = group('celula')
 
   function openMember(memberId: number) {
     close()
@@ -139,6 +140,20 @@ export function DeleteMember({ id, name, iconClassName, onOpenMember }: Props) {
                   <div className={classes.depsList}>
                     {ministerios.map((d) => (
                       <TextPill key={d.id} onClick={() => router.push('/ministerios')}>
+                        {d.name}
+                      </TextPill>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {celulas.length > 0 && (
+                <div>
+                  <h3 className={classes.depsLabel}>
+                    {celulas.length > 1 ? 'Líder das células' : 'Líder da célula'}
+                  </h3>
+                  <div className={classes.depsList}>
+                    {celulas.map((d) => (
+                      <TextPill key={d.id} onClick={() => router.push('/celulas')}>
                         {d.name}
                       </TextPill>
                     ))}
