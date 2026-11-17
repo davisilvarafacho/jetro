@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { fullName } from '@/lib/person-name'
+import type { GroupKind } from '@/lib/group-members'
+import { GROUP_ROLE, type AssignableRole } from '@/lib/group-roles'
 
 // fullName vive em person-name.ts para componentes de cliente usarem sem puxar o Prisma.
 export { fullName }
@@ -13,6 +15,10 @@ export type MemberRow = {
   lastName: string
   leader: PersonRef | null
   parca: PersonRef | null
+  // Liderança vem de Ministry.leaderId / Cell.leaderId (fonte da verdade), não dos vínculos role=1.
+  leads: { kind: GroupKind; id: number; name: string }[]
+  // Vínculos como sublíder (2) ou membro (3).
+  participates: { kind: GroupKind; id: number; name: string; role: AssignableRole }[]
 }
 
 export type Dependents = {
@@ -25,7 +31,7 @@ export type Dependents = {
 const personRef = { select: { id: true, firstName: true, lastName: true } } as const
 
 export async function listMembers(): Promise<MemberRow[]> {
-  return prisma.member.findMany({
+  const rows = await prisma.member.findMany({
     orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
     select: {
       id: true,
@@ -34,8 +40,42 @@ export async function listMembers(): Promise<MemberRow[]> {
       lastName: true,
       leader: personRef,
       parca: personRef,
+      ministerios: { select: { id: true, name: true } },
+      celulas: { select: { id: true, name: true } },
+      ministryLinks: {
+        where: { role: { in: [GROUP_ROLE.SubLeader, GROUP_ROLE.Member] } },
+        select: { role: true, ministry: { select: { id: true, name: true } } },
+      },
+      cellLinks: {
+        where: { role: { in: [GROUP_ROLE.SubLeader, GROUP_ROLE.Member] } },
+        select: { role: true, cell: { select: { id: true, name: true } } },
+      },
     },
   })
+  const asRole = (role: number): AssignableRole =>
+    role === GROUP_ROLE.SubLeader ? GROUP_ROLE.SubLeader : GROUP_ROLE.Member
+  // Ministérios antes de células; dentro de cada tipo, por nome.
+  const collator = new Intl.Collator('pt-BR')
+  const sortGroups = <T extends { kind: GroupKind; name: string }>(items: T[]): T[] =>
+    items.sort(
+      (a, b) =>
+        (a.kind === b.kind ? 0 : a.kind === 'ministry' ? -1 : 1) || collator.compare(a.name, b.name),
+    )
+  return rows.map(({ ministerios, celulas, ministryLinks, cellLinks, ...m }) => ({
+    ...m,
+    leads: sortGroups([
+      ...ministerios.map((g) => ({ kind: 'ministry' as const, ...g })),
+      ...celulas.map((g) => ({ kind: 'cell' as const, ...g })),
+    ]),
+    participates: sortGroups([
+      ...ministryLinks.map((l) => ({
+        kind: 'ministry' as const,
+        ...l.ministry,
+        role: asRole(l.role),
+      })),
+      ...cellLinks.map((l) => ({ kind: 'cell' as const, ...l.cell, role: asRole(l.role) })),
+    ]),
+  }))
 }
 
 // Sobe a cadeia de líderes a partir do candidato; true se passar por memberId.

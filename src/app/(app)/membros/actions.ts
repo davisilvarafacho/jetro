@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { Prisma } from '@/generated/prisma/client'
 import { isValidCpf, onlyDigits } from '@/lib/cpf'
+import { setMemberGroups, type GroupKind } from '@/lib/group-members'
 import {
   blockedDeleteMessage,
   getDependents,
@@ -31,6 +32,35 @@ function optionalId(value: FormDataEntryValue | null): number | null {
   return typeof value === 'string' && value !== '' && Number.isInteger(n) ? n : null
 }
 
+// Lê a lista separada por vírgula do MultiSelect: só inteiros positivos, sem repetição.
+function parseIds(value: FormDataEntryValue | null): number[] {
+  if (typeof value !== 'string') return []
+  const ids = value
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => /^\d+$/.test(part))
+    .map(Number)
+    .filter((n) => Number.isSafeInteger(n) && n > 0)
+  return [...new Set(ids)]
+}
+
+// Descarta ids inexistentes (a FK falharia) e grupos que a própria pessoa lidera: a liderança
+// vem do cadastro do grupo e não se altera por aqui.
+async function existingGroupIds(
+  tx: Prisma.TransactionClient,
+  kind: GroupKind,
+  ids: number[],
+  memberId: number,
+): Promise<number[]> {
+  if (!ids.length) return []
+  const where = { id: { in: ids } }
+  const rows =
+    kind === 'ministry'
+      ? await tx.ministry.findMany({ where, select: { id: true, leaderId: true } })
+      : await tx.cell.findMany({ where, select: { id: true, leaderId: true } })
+  return rows.filter((g) => g.leaderId !== memberId).map((g) => g.id)
+}
+
 export async function saveMember(
   _prev: MemberFormState,
   formData: FormData,
@@ -40,6 +70,8 @@ export async function saveMember(
   const id = optionalId(formData.get('id'))
   const leaderId = optionalId(formData.get('leaderId'))
   const parcaId = optionalId(formData.get('parcaId'))
+  const ministryIds = parseIds(formData.get('ministryIds'))
+  const cellIds = parseIds(formData.get('cellIds'))
 
   const errors: Partial<Record<Field, string>> = {}
   const parsed = schema.safeParse({
@@ -80,8 +112,24 @@ export async function saveMember(
 
   const data = { ...parsed.data, leaderId, parcaId }
   try {
-    if (id !== null) await prisma.member.update({ where: { id }, data })
-    else await prisma.member.create({ data })
+    await prisma.$transaction(async (tx) => {
+      const saved =
+        id !== null
+          ? await tx.member.update({ where: { id }, data, select: { id: true } })
+          : await tx.member.create({ data, select: { id: true } })
+      await setMemberGroups(
+        tx,
+        'ministry',
+        saved.id,
+        await existingGroupIds(tx, 'ministry', ministryIds, saved.id),
+      )
+      await setMemberGroups(
+        tx,
+        'cell',
+        saved.id,
+        await existingGroupIds(tx, 'cell', cellIds, saved.id),
+      )
+    })
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return { errors: { cpf: 'Este CPF já está cadastrado' } }

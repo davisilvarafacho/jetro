@@ -72,6 +72,15 @@
   font-weight: 600;
 }
 
+.led {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.ledLabel {
+  font-weight: 600;
+}
+
 .footer {
   display: flex;
   justify-content: flex-end;
