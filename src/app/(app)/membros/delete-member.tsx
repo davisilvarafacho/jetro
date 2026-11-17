@@ -116,7 +116,7 @@ export function DeleteMember({ id, name, iconClassName, onOpenMember }: Props) {
       >
         {memberships.length > 0 && (
           <div className={classes.memberships}>
-            <h3 className={classes.depsLabel}>Será removido de</h3>
+            <h3 className={classes.depsLabel}>Sai de</h3>
             <ul className={classes.membershipList}>
               {memberships.map((m) => (
                 <li key={`${m.kind}-${m.id}`} className={classes.membership}>

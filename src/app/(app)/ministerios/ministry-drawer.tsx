@@ -80,8 +80,6 @@ function MinistryForm({ ministry, members, onClose }: FormProps) {
             value={leaderId}
             onChange={(value) => {
               setLeaderId(value)
-              // Quem vira líder sai da lista de membros; o líder anterior é tratado ao salvar.
-              setEntries((list) => list.filter((e) => String(e.memberId) !== value))
               touch('leaderId')
             }}
             error={errorFor('leaderId')}

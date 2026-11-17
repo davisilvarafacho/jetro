@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { ActionIcon, Select } from '@mantine/core'
 import { IconX } from '@tabler/icons-react'
 import { PersonPill } from '@/components/person'
@@ -24,7 +25,11 @@ const ROLE_OPTIONS = [GROUP_ROLE.SubLeader, GROUP_ROLE.Member].map((role) => ({
 }))
 
 export function GroupMembersField({ candidates, leaderId, value, onChange }: Props) {
+  const [search, setSearch] = useState('')
   const byId = new Map(candidates.map((c) => [c.id, c]))
+  // O líder atual não aparece nem é enviado, mas a entrada fica guardada: se o líder voltar a
+  // mudar, quem era sublíder ou membro não se perde.
+  const shown = value.filter((v) => String(v.memberId) !== leaderId)
   const taken = new Set(value.map((v) => v.memberId))
   const options = candidates
     .filter((c) => String(c.id) !== leaderId && !taken.has(c.id))
@@ -39,15 +44,18 @@ export function GroupMembersField({ candidates, leaderId, value, onChange }: Pro
         nothingFoundMessage="Nenhum membro encontrado"
         data={options}
         value={null}
+        searchValue={search}
+        onSearchChange={setSearch}
         onChange={(id) => {
+          setSearch('')
           if (id) onChange([...value, { memberId: Number(id), role: GROUP_ROLE.Member }])
         }}
         disabled={leaderId === null}
         searchable
       />
-      {value.length > 0 && (
+      {shown.length > 0 && (
         <ul className={classes.list}>
-          {value.map((entry) => {
+          {shown.map((entry) => {
             const person = byId.get(entry.memberId)
             const name = person ? fullName(person) : `Membro ${entry.memberId}`
             return (
@@ -81,7 +89,7 @@ export function GroupMembersField({ candidates, leaderId, value, onChange }: Pro
           })}
         </ul>
       )}
-      <input type="hidden" name="members" value={JSON.stringify(value)} />
+      <input type="hidden" name="members" value={JSON.stringify(shown)} />
     </div>
   )
 }

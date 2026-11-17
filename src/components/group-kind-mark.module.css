@@ -1,0 +1,6 @@
+.mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  vertical-align: text-bottom;
+  margin-inline-end: 5px;
+}

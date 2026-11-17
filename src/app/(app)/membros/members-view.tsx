@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ActionIcon, Badge, Button, Table, TextInput, Title, VisuallyHidden } from '@mantine/core'
 import { IconAlertTriangle, IconPencil, IconPlus, IconSearch } from '@tabler/icons-react'
+import { GroupKindMark } from '@/components/group-kind-mark'
 import { Initials, PersonPill } from '@/components/person'
 import { onlyDigits, formatCpf } from '@/lib/cpf'
 import { GROUP_ROLE } from '@/lib/group-roles'
@@ -174,6 +175,7 @@ export function MembersView({
                         <div className={classes.pills}>
                           {m.leads.map((g) => (
                             <span key={`${g.kind}-${g.id}`} className={classes.leadPill}>
+                              <GroupKindMark kind={g.kind} />
                               {g.name}
                             </span>
                           ))}
@@ -192,6 +194,7 @@ export function MembersView({
                         <div className={classes.pills}>
                           {m.participates.map((g) => (
                             <span key={`${g.kind}-${g.id}`} className={classes.groupPill}>
+                              <GroupKindMark kind={g.kind} />
                               {g.role === GROUP_ROLE.SubLeader ? `${g.name} · sublíder` : g.name}
                             </span>
                           ))}

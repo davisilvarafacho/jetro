@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react'
 import { Button, Drawer, MultiSelect, Select, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { GroupKindMark } from '@/components/group-kind-mark'
 import { formatCpf, onlyDigits } from '@/lib/cpf'
 import { fullName } from '@/lib/person-name'
 import type { MemberRow } from '@/lib/members'
@@ -68,7 +69,6 @@ function MemberForm({ member, members, ministries, cells, onClose }: FormProps) 
   const led = new Set((member?.leads ?? []).map((g) => `${g.kind}-${g.id}`))
   const groupData = (kind: 'ministry' | 'cell', groups: GroupOption[]) =>
     groups.filter((g) => !led.has(`${kind}-${g.id}`)).map((g) => ({ value: String(g.id), label: g.name }))
-  const ledText = member?.leads.map((g) => g.name).join(', ')
 
   return (
     <form action={formAction} className={classes.form} noValidate>
@@ -151,9 +151,16 @@ function MemberForm({ member, members, ministries, cells, onClose }: FormProps) 
         </div>
         <div className={classes.group}>
           <h3 className={classes.groupTitle}>Participação</h3>
-          {ledText && (
+          {member && member.leads.length > 0 && (
             <p className={classes.led}>
-              <span className={classes.ledLabel}>Lidera:</span> {ledText}
+              <span className={classes.ledLabel}>Lidera:</span>{' '}
+              {member.leads.map((g, i) => (
+                <span key={`${g.kind}-${g.id}`}>
+                  {i > 0 && ', '}
+                  <GroupKindMark kind={g.kind} />
+                  {g.name}
+                </span>
+              ))}
             </p>
           )}
           <MultiSelect
