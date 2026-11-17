@@ -5,9 +5,11 @@ import { z } from 'zod'
 import { Prisma } from '@/generated/prisma/client'
 import { isValidCpf, onlyDigits } from '@/lib/cpf'
 import { setMemberGroups, type GroupKind } from '@/lib/group-members'
+import type { AssignableRole } from '@/lib/group-roles'
 import {
   blockedDeleteMessage,
   getDependents,
+  getMemberships,
   isInLeaderChainBelow,
   type Dependents,
 } from '@/lib/members'
@@ -59,6 +61,13 @@ async function existingGroupIds(
       ? await tx.ministry.findMany({ where, select: { id: true, leaderId: true } })
       : await tx.cell.findMany({ where, select: { id: true, leaderId: true } })
   return rows.filter((g) => g.leaderId !== memberId).map((g) => g.id)
+}
+
+// Os drawers de ministérios e células listam membros, então também dependem do cadastro.
+function revalidateMemberPages() {
+  revalidatePath('/membros')
+  revalidatePath('/ministerios')
+  revalidatePath('/celulas')
 }
 
 export async function saveMember(
@@ -137,7 +146,7 @@ export async function saveMember(
     throw error
   }
 
-  revalidatePath('/membros')
+  revalidateMemberPages()
   return { ok: true }
 }
 
@@ -166,7 +175,7 @@ export async function deleteMember(id: number): Promise<DeleteMemberResult> {
     select: { firstName: true, lastName: true },
   })
   if (!member) {
-    revalidatePath('/membros')
+    revalidateMemberPages()
     return { ok: true }
   }
 
@@ -175,6 +184,35 @@ export async function deleteMember(id: number): Promise<DeleteMemberResult> {
   if (message) return { ok: false, message, dependents: toDependentList(deps) }
 
   await prisma.member.delete({ where: { id } })
-  revalidatePath('/membros')
+  revalidateMemberPages()
   return { ok: true }
+}
+
+export type DeleteImpact =
+  | {
+      blocked: true
+      message: string
+      dependents: Extract<DeleteMemberResult, { ok: false }>['dependents']
+    }
+  | {
+      blocked: false
+      memberships: { kind: GroupKind; id: number; name: string; role: AssignableRole }[]
+    }
+
+// Só consulta, nunca apaga: a confirmação mostra o que sairá junto. O bloqueio é conferido de novo
+// em deleteMember, porque o membro pode virar líder entre abrir a confirmação e confirmar.
+export async function getDeleteImpact(id: number): Promise<DeleteImpact> {
+  await requireUser()
+
+  const member = await prisma.member.findUnique({
+    where: { id },
+    select: { firstName: true, lastName: true },
+  })
+  if (!member) return { blocked: false, memberships: [] }
+
+  const deps = await getDependents(id)
+  const message = blockedDeleteMessage(fullName(member), deps)
+  if (message) return { blocked: true, message, dependents: toDependentList(deps) }
+
+  return { blocked: false, memberships: await getMemberships(id) }
 }

@@ -6,11 +6,13 @@ import { ActionIcon, Button, Modal } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertTriangle, IconTrash } from '@tabler/icons-react'
 import { PersonPill, TextPill } from '@/components/person'
-import { deleteMember } from './actions'
+import { roleLabel } from '@/lib/group-roles'
+import { deleteMember, getDeleteImpact, type DeleteImpact } from './actions'
 import classes from './delete-member.module.css'
 
 type Dependent = { id: number; name: string; kind: 'liderado' | 'parca' | 'ministerio' | 'celula' }
 type Blocked = { message: string; dependents: Dependent[] }
+type Memberships = Extract<DeleteImpact, { blocked: false }>['memberships']
 
 type Props = {
   id: number
@@ -25,10 +27,35 @@ export function DeleteMember({ id, name, iconClassName, onOpenMember }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [checking, setChecking] = useState(false)
   const [blocked, setBlocked] = useState<Blocked | null>(null)
+  const [memberships, setMemberships] = useState<Memberships>([])
 
   function close() {
     setOpen(false)
+  }
+
+  // Primeiro passo: só consulta o que a exclusão afeta, sem apagar nada.
+  async function start() {
+    setChecking(true)
+    try {
+      const impact = await getDeleteImpact(id)
+      if (impact.blocked) {
+        setBlocked({ message: impact.message, dependents: impact.dependents })
+        setMemberships([])
+      } else {
+        setBlocked(null)
+        setMemberships(impact.memberships)
+      }
+      setOpen(true)
+    } catch {
+      notifications.show({
+        message: 'Não foi possível verificar o membro. Tente novamente.',
+        color: 'red',
+      })
+    } finally {
+      setChecking(false)
+    }
   }
 
   async function confirm() {
@@ -41,6 +68,11 @@ export function DeleteMember({ id, name, iconClassName, onOpenMember }: Props) {
       } else {
         setBlocked({ message: result.message, dependents: result.dependents })
       }
+    } catch {
+      notifications.show({
+        message: 'Não foi possível excluir o membro. Tente novamente.',
+        color: 'red',
+      })
     } finally {
       setLoading(false)
     }
@@ -64,10 +96,8 @@ export function DeleteMember({ id, name, iconClassName, onOpenMember }: Props) {
         className={iconClassName}
         aria-label={`Excluir ${name}`}
         title="Excluir"
-        onClick={() => {
-          setBlocked(null)
-          setOpen(true)
-        }}
+        loading={checking}
+        onClick={start}
       >
         <IconTrash size={18} stroke={1.75} />
       </ActionIcon>
@@ -84,6 +114,21 @@ export function DeleteMember({ id, name, iconClassName, onOpenMember }: Props) {
         title={`Excluir ${name}?`}
         classNames={{ title: classes.confirmTitle }}
       >
+        {memberships.length > 0 && (
+          <div className={classes.memberships}>
+            <h3 className={classes.depsLabel}>Será removido de</h3>
+            <ul className={classes.membershipList}>
+              {memberships.map((m) => (
+                <li key={`${m.kind}-${m.id}`} className={classes.membership}>
+                  <span className={classes.membershipName}>{m.name}</span>
+                  <span className={classes.membershipRole}>
+                    {m.kind === 'ministry' ? 'Ministério' : 'Célula'} · {roleLabel(m.role)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <p className={classes.confirmText}>Esta ação não pode ser desfeita.</p>
         <div className={classes.actions}>
           <Button variant="default" onClick={close}>

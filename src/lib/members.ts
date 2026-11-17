@@ -128,6 +128,36 @@ export async function getDependents(id: number): Promise<Dependents> {
   }
 }
 
+// Vínculos de participação (sublíder/membro) que somem junto com o membro. Só consulta.
+export async function getMemberships(
+  id: number,
+): Promise<{ kind: GroupKind; id: number; name: string; role: AssignableRole }[]> {
+  const roles = [GROUP_ROLE.SubLeader, GROUP_ROLE.Member]
+  const [ministryLinks, cellLinks] = await Promise.all([
+    prisma.ministryMember.findMany({
+      where: { memberId: id, role: { in: roles } },
+      select: { role: true, ministry: { select: { id: true, name: true } } },
+    }),
+    prisma.cellMember.findMany({
+      where: { memberId: id, role: { in: roles } },
+      select: { role: true, cell: { select: { id: true, name: true } } },
+    }),
+  ])
+  const asRole = (role: number): AssignableRole =>
+    role === GROUP_ROLE.SubLeader ? GROUP_ROLE.SubLeader : GROUP_ROLE.Member
+  const collator = new Intl.Collator('pt-BR')
+  const byName = (a: { name: string }, b: { name: string }) => collator.compare(a.name, b.name)
+  // Ministérios antes de células; dentro de cada tipo, por nome.
+  return [
+    ...ministryLinks
+      .map((l) => ({ kind: 'ministry' as const, ...l.ministry, role: asRole(l.role) }))
+      .sort(byName),
+    ...cellLinks
+      .map((l) => ({ kind: 'cell' as const, ...l.cell, role: asRole(l.role) }))
+      .sort(byName),
+  ]
+}
+
 export function joinPt(items: string[]): string {
   if (items.length <= 1) return items.join('')
   return `${items.slice(0, -1).join(', ')} e ${items[items.length - 1]}`
