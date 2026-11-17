@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AppShell as MantineAppShell, Avatar, Button, NavLink } from '@mantine/core'
-import { IconBuildingChurch, IconLogout, IconUsers } from '@tabler/icons-react'
+import { IconBuildingChurch, IconLogout, IconUsers, IconUsersGroup } from '@tabler/icons-react'
 import { logout } from '@/app/login/actions'
 import { Brand } from './brand'
 import classes from './app-shell.module.css'
@@ -12,6 +12,7 @@ import classes from './app-shell.module.css'
 const links = [
   { href: '/membros', label: 'Membros', icon: <IconUsers size={21} stroke={1.75} /> },
   { href: '/ministerios', label: 'Ministérios', icon: <IconBuildingChurch size={21} stroke={1.75} /> },
+  { href: '/celulas', label: 'Células', icon: <IconUsersGroup size={21} stroke={1.75} /> },
 ]
 
 function initials(name: string) {

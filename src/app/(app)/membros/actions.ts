@@ -4,9 +4,12 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { Prisma } from '@/generated/prisma/client'
 import { isValidCpf, onlyDigits } from '@/lib/cpf'
+import { setMemberGroups, type GroupKind } from '@/lib/group-members'
+import type { AssignableRole } from '@/lib/group-roles'
 import {
   blockedDeleteMessage,
   getDependents,
+  getMemberships,
   isInLeaderChainBelow,
   type Dependents,
 } from '@/lib/members'
@@ -31,6 +34,42 @@ function optionalId(value: FormDataEntryValue | null): number | null {
   return typeof value === 'string' && value !== '' && Number.isInteger(n) ? n : null
 }
 
+// Lê a lista separada por vírgula do MultiSelect: só inteiros positivos, sem repetição.
+function parseIds(value: FormDataEntryValue | null): number[] {
+  if (typeof value !== 'string') return []
+  const ids = value
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => /^\d+$/.test(part))
+    .map(Number)
+    .filter((n) => Number.isSafeInteger(n) && n > 0)
+  return [...new Set(ids)]
+}
+
+// Descarta ids inexistentes (a FK falharia) e grupos que a própria pessoa lidera: a liderança
+// vem do cadastro do grupo e não se altera por aqui.
+async function existingGroupIds(
+  tx: Prisma.TransactionClient,
+  kind: GroupKind,
+  ids: number[],
+  memberId: number,
+): Promise<number[]> {
+  if (!ids.length) return []
+  const where = { id: { in: ids } }
+  const rows =
+    kind === 'ministry'
+      ? await tx.ministry.findMany({ where, select: { id: true, leaderId: true } })
+      : await tx.cell.findMany({ where, select: { id: true, leaderId: true } })
+  return rows.filter((g) => g.leaderId !== memberId).map((g) => g.id)
+}
+
+// Os drawers de ministérios e células listam membros, então também dependem do cadastro.
+function revalidateMemberPages() {
+  revalidatePath('/membros')
+  revalidatePath('/ministerios')
+  revalidatePath('/celulas')
+}
+
 export async function saveMember(
   _prev: MemberFormState,
   formData: FormData,
@@ -40,6 +79,8 @@ export async function saveMember(
   const id = optionalId(formData.get('id'))
   const leaderId = optionalId(formData.get('leaderId'))
   const parcaId = optionalId(formData.get('parcaId'))
+  const ministryIds = parseIds(formData.get('ministryIds'))
+  const cellIds = parseIds(formData.get('cellIds'))
 
   const errors: Partial<Record<Field, string>> = {}
   const parsed = schema.safeParse({
@@ -80,8 +121,24 @@ export async function saveMember(
 
   const data = { ...parsed.data, leaderId, parcaId }
   try {
-    if (id !== null) await prisma.member.update({ where: { id }, data })
-    else await prisma.member.create({ data })
+    await prisma.$transaction(async (tx) => {
+      const saved =
+        id !== null
+          ? await tx.member.update({ where: { id }, data, select: { id: true } })
+          : await tx.member.create({ data, select: { id: true } })
+      await setMemberGroups(
+        tx,
+        'ministry',
+        saved.id,
+        await existingGroupIds(tx, 'ministry', ministryIds, saved.id),
+      )
+      await setMemberGroups(
+        tx,
+        'cell',
+        saved.id,
+        await existingGroupIds(tx, 'cell', cellIds, saved.id),
+      )
+    })
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return { errors: { cpf: 'Este CPF já está cadastrado' } }
@@ -89,7 +146,7 @@ export async function saveMember(
     throw error
   }
 
-  revalidatePath('/membros')
+  revalidateMemberPages()
   return { ok: true }
 }
 
@@ -98,7 +155,7 @@ export type DeleteMemberResult =
   | {
       ok: false
       message: string
-      dependents: { id: number; name: string; kind: 'liderado' | 'parca' | 'ministerio' }[]
+      dependents: { id: number; name: string; kind: 'liderado' | 'parca' | 'ministerio' | 'celula' }[]
     }
 
 function toDependentList(deps: Dependents) {
@@ -106,6 +163,7 @@ function toDependentList(deps: Dependents) {
     ...deps.liderados.map((d) => ({ ...d, kind: 'liderado' as const })),
     ...deps.parcaDe.map((d) => ({ ...d, kind: 'parca' as const })),
     ...deps.ministerios.map((d) => ({ ...d, kind: 'ministerio' as const })),
+    ...deps.celulas.map((d) => ({ ...d, kind: 'celula' as const })),
   ]
 }
 
@@ -117,7 +175,7 @@ export async function deleteMember(id: number): Promise<DeleteMemberResult> {
     select: { firstName: true, lastName: true },
   })
   if (!member) {
-    revalidatePath('/membros')
+    revalidateMemberPages()
     return { ok: true }
   }
 
@@ -126,6 +184,35 @@ export async function deleteMember(id: number): Promise<DeleteMemberResult> {
   if (message) return { ok: false, message, dependents: toDependentList(deps) }
 
   await prisma.member.delete({ where: { id } })
-  revalidatePath('/membros')
+  revalidateMemberPages()
   return { ok: true }
+}
+
+export type DeleteImpact =
+  | {
+      blocked: true
+      message: string
+      dependents: Extract<DeleteMemberResult, { ok: false }>['dependents']
+    }
+  | {
+      blocked: false
+      memberships: { kind: GroupKind; id: number; name: string; role: AssignableRole }[]
+    }
+
+// Só consulta, nunca apaga: a confirmação mostra o que sairá junto. O bloqueio é conferido de novo
+// em deleteMember, porque o membro pode virar líder entre abrir a confirmação e confirmar.
+export async function getDeleteImpact(id: number): Promise<DeleteImpact> {
+  await requireUser()
+
+  const member = await prisma.member.findUnique({
+    where: { id },
+    select: { firstName: true, lastName: true },
+  })
+  if (!member) return { blocked: false, memberships: [] }
+
+  const deps = await getDependents(id)
+  const message = blockedDeleteMessage(fullName(member), deps)
+  if (message) return { blocked: true, message, dependents: toDependentList(deps) }
+
+  return { blocked: false, memberships: await getMemberships(id) }
 }

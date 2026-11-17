@@ -65,6 +65,40 @@
   line-height: 1.55;
 }
 
+.memberships {
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: #f4f8f4;
+}
+
+.membershipList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.membership {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.membershipName {
+  color: #14261f;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.membershipRole {
+  flex-shrink: 0;
+  color: #5c6c65;
+  font-size: 0.875rem;
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;

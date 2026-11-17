@@ -3,12 +3,14 @@
 import { useState } from 'react'
 import { ActionIcon, Badge, Button, Table, TextInput, Title, VisuallyHidden } from '@mantine/core'
 import { IconAlertTriangle, IconPencil, IconPlus, IconSearch } from '@tabler/icons-react'
+import { GroupKindMark } from '@/components/group-kind-mark'
 import { Initials, PersonPill } from '@/components/person'
 import { onlyDigits, formatCpf } from '@/lib/cpf'
+import { GROUP_ROLE } from '@/lib/group-roles'
 import { fullName } from '@/lib/person-name'
 import type { MemberRow } from '@/lib/members'
 import { DeleteMember } from './delete-member'
-import { MemberDrawer } from './member-drawer'
+import { MemberDrawer, type GroupOption } from './member-drawer'
 import classes from './members.module.css'
 
 function normalize(text: string) {
@@ -17,7 +19,15 @@ function normalize(text: string) {
 
 type Drawer = { open: boolean; member: MemberRow | null }
 
-export function MembersView({ members }: { members: MemberRow[] }) {
+export function MembersView({
+  members,
+  ministries,
+  cells,
+}: {
+  members: MemberRow[]
+  ministries: GroupOption[]
+  cells: GroupOption[]
+}) {
   const [onlyUnled, setOnlyUnled] = useState(false)
   const [query, setQuery] = useState('')
   const [drawer, setDrawer] = useState<Drawer>({ open: false, member: null })
@@ -103,6 +113,8 @@ export function MembersView({ members }: { members: MemberRow[] }) {
                 <Table.Th>Membro</Table.Th>
                 <Table.Th>Líder</Table.Th>
                 <Table.Th>Parça</Table.Th>
+                <Table.Th>Lidera</Table.Th>
+                <Table.Th>Participa</Table.Th>
                 <Table.Th>
                   <VisuallyHidden>Ações</VisuallyHidden>
                 </Table.Th>
@@ -158,6 +170,44 @@ export function MembersView({ members }: { members: MemberRow[] }) {
                         </>
                       )}
                     </Table.Td>
+                    <Table.Td>
+                      {m.leads.length > 0 ? (
+                        <div className={classes.pills}>
+                          {m.leads.map((g) => (
+                            <span key={`${g.kind}-${g.id}`} className={classes.leadPill}>
+                              <GroupKindMark kind={g.kind} />
+                              {g.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <>
+                          <span className={classes.dash} aria-hidden="true">
+                            —
+                          </span>
+                          <VisuallyHidden>Não lidera nada</VisuallyHidden>
+                        </>
+                      )}
+                    </Table.Td>
+                    <Table.Td>
+                      {m.participates.length > 0 ? (
+                        <div className={classes.pills}>
+                          {m.participates.map((g) => (
+                            <span key={`${g.kind}-${g.id}`} className={classes.groupPill}>
+                              <GroupKindMark kind={g.kind} />
+                              {g.role === GROUP_ROLE.SubLeader ? `${g.name} · sublíder` : g.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <>
+                          <span className={classes.dash} aria-hidden="true">
+                            —
+                          </span>
+                          <VisuallyHidden>Não participa de nada</VisuallyHidden>
+                        </>
+                      )}
+                    </Table.Td>
                     <Table.Td className={classes.actions}>
                       <ActionIcon
                         variant="subtle"
@@ -187,6 +237,8 @@ export function MembersView({ members }: { members: MemberRow[] }) {
         opened={drawer.open}
         member={drawer.member}
         members={members}
+        ministries={ministries}
+        cells={cells}
         onClose={() => setDrawer((d) => ({ ...d, open: false }))}
       />
     </>
