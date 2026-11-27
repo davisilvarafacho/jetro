@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Alias local (/etc/hosts) para abrir o app por jetro.localhost, por exemplo ao testar o QR Code.
+  allowedDevOrigins: ["jetro.localhost"],
 };
 
 export default nextConfig;
