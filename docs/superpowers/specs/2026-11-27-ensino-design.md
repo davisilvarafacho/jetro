@@ -20,6 +20,10 @@ presença é o que mais cresce, então ela é modelada desde já para escala.
   membro veio).
 - Exportar a presença de uma aula em CSV, que o Excel abre direto (pedido do usuário em
   2026-11-27).
+- Linha do tempo de um inscrito no curso: as aulas a que foi e as que não foi (pedido do usuário
+  em 2026-11-27).
+- O aluno registra a própria presença: QR Code da aula leva a uma página pública onde ele informa o
+  CPF e confirma (pedido do usuário em 2026-11-27).
 
 ## Não objetivos
 
@@ -66,6 +70,41 @@ presença é o que mais cresce, então ela é modelada desde já para escala.
 - Frequência se calcula com `count`/`groupBy`, sem carregar linhas.
 - Apagar curso apaga suas aulas, inscrições e presenças (`Cascade`).
 
+## Linha do tempo do inscrito
+
+Na lista de inscritos do drawer do curso, cada linha tem um ícone "Ver frequência" que abre um
+modal com o componente `Timeline` do Mantine (já instalado), com as aulas do curso da mais antiga
+para a mais nova:
+
+- Cada aula mostra nome, data (`DD/MM/AAAA`) e o estado: **Presente** (ícone de check, verde),
+  **Faltou** (ícone X, vermelho) ou **Agendada** (relógio, neutro).
+- Aula com data depois de hoje (fuso `America/Sao_Paulo`) é "Agendada", nunca falta.
+- No topo: "Presente em X de Y aulas realizadas" (só conta aulas que já aconteceram).
+- Conta a presença registrada na aula do curso, esteja o membro inscrito ou não.
+- Uma consulta só: as aulas do curso com a presença do membro. O total de aulas de um curso é
+  pequeno, então não pagina.
+
+## Presença pelo próprio aluno (QR Code)
+
+- Página pública `/presenca/[lessonId]`, fora do grupo `(app)` e sem login. `proxy.ts` ganha uma
+  exceção para `/presenca/`.
+- A página mostra aula, curso, professor e data, um campo de CPF e o botão "Confirmar presença".
+- O CPF é reduzido a dígitos (`onlyDigits`). Menos de 11 dígitos: "Informe os 11 números do CPF".
+- CPF sem membro cadastrado: **"Membro não cadastrado. Por favor, confira com o professor
+  <nome do professor> o seu cadastro de membro."**
+- Membro encontrado: grava a presença (idempotente) e mostra "Presença confirmada, <primeiro
+  nome>!". Quem já estava presente vê "Sua presença já estava registrada, <primeiro nome>.". A
+  página mostra só o primeiro nome, nunca o nome completo.
+- Não exige inscrição no curso e não confere a data da aula.
+- Na lista de aulas, cada linha ganha o botão "QR Code": um modal com o QR (biblioteca
+  `qrcode.react`, dependência nova) que aponta para `<origem do site>/presenca/<id>`, com o link
+  escrito embaixo, grande o bastante para projetar.
+- **É uma POC e fica aberta de propósito** (decisão do usuário): sem token, sem limite de tentativas
+  e sem janela de data. Quem souber o id da aula e o CPF de alguém marca a presença dele, e a
+  mensagem de "não cadastrado" revela se um CPF existe. A autenticação será pensada na migração
+  para Django.
+- Para o celular abrir o QR, o site precisa estar num endereço que ele alcance (não `localhost`).
+
 ## Exportação da presença (CSV)
 
 Um botão por aula, na lista de aulas, baixa o CSV da presença **já salva** (não do rascunho aberto
@@ -91,3 +130,6 @@ Minhas escolhas (a confirmar):
 - Contador denormalizado de presenças por aula, se a contagem ficar lenta.
 - Presença com horário de chegada ou justificativa de falta.
 - Exportar `.xlsx` de verdade, ou a presença de um curso inteiro, se o CSV não bastar.
+- Autenticação da página pública de presença (token no QR, janela de data, limite de tentativas),
+  na migração para Django.
+- Linha do tempo também no painel do membro (`/membros/[id]`), com todos os cursos dele.
