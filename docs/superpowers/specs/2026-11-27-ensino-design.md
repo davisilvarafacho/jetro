@@ -111,7 +111,7 @@ Um botão por aula, na lista de aulas, baixa o CSV da presença **já salva** (n
 no drawer). Fica atrás do login, como as demais telas. O volume é limitado pelo número de membros,
 então sai numa consulta só, sem paginar.
 
-Minhas escolhas (a confirmar):
+Escolhas confirmadas pelo usuário em 2026-11-27:
 
 - Colunas: `Nome` (nome completo) e `Inscrito no curso` (`Sim`/`Não`). Mostra de relance quem veio
   de fora do curso, que é a exceção que o modelo permite. Sem CPF, para não espalhar dado sensível
