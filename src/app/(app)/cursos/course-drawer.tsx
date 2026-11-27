@@ -5,18 +5,23 @@ import { Button, Drawer, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { EMPTY_SET_DRAFT, MemberSetField, type MemberSetDraft } from '@/components/member-set-field'
 import type { CourseRow } from '@/lib/courses'
-import type { MemberCursor } from '@/lib/members'
+import type { MemberCursor, PersonRef } from '@/lib/members'
 import { loadEnrolled } from '../lookups'
 import { saveCourse, type CourseFormState } from './actions'
 import classes from './course-drawer.module.css'
+import { MemberTimelineModal } from './member-timeline'
 
 export type { CourseRow }
 
 const initialState: CourseFormState = {}
 
-type FormProps = { course: CourseRow | null; onClose: () => void }
+type FormProps = {
+  course: CourseRow | null
+  onClose: () => void
+  onView: (person: PersonRef) => void
+}
 
-function CourseForm({ course, onClose }: FormProps) {
+function CourseForm({ course, onClose, onView }: FormProps) {
   const [state, formAction, pending] = useActionState(
     async (prev: CourseFormState, formData: FormData) => {
       const result = await saveCourse(prev, formData)
@@ -77,6 +82,8 @@ function CourseForm({ course, onClose }: FormProps) {
           excludeFromSet={excludeFromSet}
           draft={draft}
           onChange={setDraft}
+          // Curso novo não tem frequência ainda: o ícone só aparece para curso salvo.
+          onView={course ? onView : undefined}
         />
       </div>
       <div className={classes.footer}>
@@ -98,6 +105,9 @@ type DrawerProps = {
 }
 
 export function CourseDrawer({ opened, course, onClose }: DrawerProps) {
+  // Inscrito cuja frequência está aberta no modal.
+  const [member, setMember] = useState<PersonRef | null>(null)
+
   return (
     <Drawer.Root
       className={classes.root}
@@ -105,6 +115,8 @@ export function CourseDrawer({ opened, course, onClose }: DrawerProps) {
       onClose={onClose}
       position="right"
       size={520}
+      // Com o modal aberto, o Esc é dele: senão o drawer fecharia junto e perderia o rascunho.
+      closeOnEscape={member === null}
     >
       <Drawer.Overlay color="#14261F" backgroundOpacity={0.45} />
       <Drawer.Content>
@@ -120,8 +132,15 @@ export function CourseDrawer({ opened, course, onClose }: DrawerProps) {
           <Drawer.CloseButton aria-label="Fechar" />
         </Drawer.Header>
         <Drawer.Body className={classes.body}>
-          <CourseForm key={course?.id ?? 'new'} course={course} onClose={onClose} />
+          <CourseForm key={course?.id ?? 'new'} course={course} onClose={onClose} onView={setMember} />
         </Drawer.Body>
+        {course && (
+          <MemberTimelineModal
+            courseId={course.id}
+            member={member}
+            onClose={() => setMember(null)}
+          />
+        )}
       </Drawer.Content>
     </Drawer.Root>
   )

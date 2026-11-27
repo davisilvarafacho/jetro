@@ -1,0 +1,37 @@
+.title {
+  font-family: var(--mantine-font-family-headings);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.summary {
+  margin: 0 0 24px;
+  color: #35453f;
+  line-height: 1.55;
+}
+
+.itemText {
+  margin: 4px 0 0;
+  color: #5c6c65;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.message {
+  margin: 0;
+  color: #5c6c65;
+  line-height: 1.55;
+}
+
+.error {
+  margin: 0;
+  color: #c42d3a;
+  line-height: 1.55;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
+}

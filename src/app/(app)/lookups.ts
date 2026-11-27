@@ -20,6 +20,7 @@ import { listAttendancePage, listLessonsPage, type LessonRow } from '@/lib/lesso
 import { searchMemberOptions, type PersonRef } from '@/lib/members'
 import type { Page } from '@/lib/pagination'
 import { requireUser } from '@/lib/session'
+import { getMemberTimeline, type MemberTimeline } from '@/lib/timeline'
 
 // Consultas paginadas que as telas chamam ao rolar (listas) ou ao abrir e buscar (seletores).
 // Cada uma valida a entrada, porque chega de um cliente que pode ter sido adulterado.
@@ -104,4 +105,9 @@ export async function loadAttendance(
 ): Promise<Page<PersonRef>> {
   await requireUser()
   return listAttendancePage(id.parse(lessonId), memberCursor.parse(after))
+}
+
+export async function loadTimeline(courseId: number, memberId: number): Promise<MemberTimeline> {
+  await requireUser()
+  return getMemberTimeline(id.parse(courseId), id.parse(memberId))
 }
