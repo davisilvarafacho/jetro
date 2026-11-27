@@ -1,0 +1,63 @@
+.field {
+  display: grid;
+  gap: 12px;
+}
+
+/* Rótulo da lista, no mesmo peso dos rótulos dos campos. */
+.label {
+  margin: 8px 0 -4px;
+  color: #1a2a24;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 6px 6px 8px;
+  border-radius: 16px;
+  background: #f4f8f4;
+}
+
+.row > :first-child {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+}
+
+.action {
+  flex: none;
+  color: #5c6c65;
+}
+
+.action:hover {
+  background: #eaf1eb;
+  color: #1a2a24;
+}
+
+.remove:hover {
+  background: #fdecee;
+  color: #c42d3a;
+}
+
+.empty {
+  margin: 0;
+  color: #5c6c65;
+  font-size: 0.9375rem;
+}
+
+/* Fim da lista: o spinner (ou o botão de nova tentativa) marca onde a rolagem pede mais. */
+.more {
+  display: flex;
+  justify-content: center;
+  padding: 8px;
+}
