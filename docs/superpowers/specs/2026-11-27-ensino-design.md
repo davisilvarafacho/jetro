@@ -18,6 +18,8 @@ presença é o que mais cresce, então ela é modelada desde já para escala.
 - Presença: aula + membro. Membro não inscrito pode ter presença.
 - Presença barata de gravar e de consultar nos dois sentidos (quem veio à aula, a quais aulas o
   membro veio).
+- Exportar a presença de uma aula em CSV, que o Excel abre direto (pedido do usuário em
+  2026-11-27).
 
 ## Não objetivos
 
@@ -64,7 +66,28 @@ presença é o que mais cresce, então ela é modelada desde já para escala.
 - Frequência se calcula com `count`/`groupBy`, sem carregar linhas.
 - Apagar curso apaga suas aulas, inscrições e presenças (`Cascade`).
 
+## Exportação da presença (CSV)
+
+Um botão por aula, na lista de aulas, baixa o CSV da presença **já salva** (não do rascunho aberto
+no drawer). Fica atrás do login, como as demais telas. O volume é limitado pelo número de membros,
+então sai numa consulta só, sem paginar.
+
+Minhas escolhas (a confirmar):
+
+- Colunas: `Nome` (nome completo) e `Inscrito no curso` (`Sim`/`Não`). Mostra de relance quem veio
+  de fora do curso, que é a exceção que o modelo permite. Sem CPF, para não espalhar dado sensível
+  em planilha solta.
+- Linhas ordenadas por nome, como as listas da tela.
+- Formato que o Excel em português abre sem ajuste: UTF-8 com BOM (acentos), separador `;` (a
+  vírgula faria o Excel pt-BR abrir tudo numa coluna), quebra de linha CRLF e aspas duplas
+  quando o valor tem `;`, aspas ou quebra de linha.
+- Valor que começa com `=`, `+`, `-`, `@`, tab ou CR ganha um `'` na frente, para a planilha não
+  executar nome de membro como fórmula.
+- Arquivo `presenca-<aula>-<AAAA-MM-DD>.csv`, com o nome da aula sem acento nem símbolo.
+- Aula que não existe devolve 404.
+
 ## Futuro
 
 - Contador denormalizado de presenças por aula, se a contagem ficar lenta.
 - Presença com horário de chegada ou justificativa de falta.
+- Exportar `.xlsx` de verdade, ou a presença de um curso inteiro, se o CSV não bastar.
