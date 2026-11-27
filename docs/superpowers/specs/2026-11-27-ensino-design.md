@@ -1,7 +1,8 @@
 # Módulo de ensino: cursos, inscritos, aulas e presença (design curto)
 
 Complementa `2026-11-16-jetro-mvp-design.md`. Trabalho feito direto na `main`, sem worktree, por
-decisão do usuário, para deixar o histórico registrado.
+decisão do usuário, para deixar o histórico registrado. Aprovado na conversa de 2026-11-27,
+incluindo `courseId` e `date` na aula e a presença só de quem veio (falta = sem linha).
 
 ## Intenção
 
@@ -45,7 +46,7 @@ presença é o que mais cresce, então ela é modelada desde já para escala.
   `@@index([memberId])`. Sem `id` próprio e sem FK para a inscrição.
 - `Member` ganha as relações inversas (inscrições, aulas como professor, presenças).
 
-## Minhas escolhas (precisam da sua confirmação)
+## Escolhas confirmadas
 
 - `Lesson` pertence a um `Course` (`courseId`). Pela sua lista a aula só tinha nome e professor, mas
   sem o curso a inscrição fica desconectada da aula.
