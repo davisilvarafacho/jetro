@@ -11,6 +11,7 @@ import { loadLessons } from '../lookups'
 import { DeleteLesson } from './delete-lesson'
 import { LessonDrawer, type LessonRow } from './lesson-drawer'
 import classes from './lessons.module.css'
+import { QrCodeButton } from './qr-code-button'
 
 type Drawer = { open: boolean; lesson: LessonRow | null }
 
@@ -92,6 +93,7 @@ export function LessonsView({
                   </Table.Td>
                   <Table.Td className={classes.count}>{l.present}</Table.Td>
                   <Table.Td className={classes.actions}>
+                    <QrCodeButton lessonId={l.id} lessonName={l.name} />
                     <ActionIcon
                       variant="subtle"
                       className={classes.actionIcon}

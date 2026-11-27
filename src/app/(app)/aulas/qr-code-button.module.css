@@ -1,0 +1,58 @@
+/* Mesmo visual dos botões de linha da tabela (editar e excluir) em lessons.module.css. */
+.actionIcon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  color: #5c6c65;
+}
+
+.actionIcon:hover {
+  background: #eaf1eb;
+  color: #1a2a24;
+}
+
+.modalTitle {
+  font-family: var(--mantine-font-family-headings);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.text {
+  margin: 0;
+  align-self: stretch;
+  color: #35453f;
+  line-height: 1.55;
+}
+
+/* Área branca em volta do QR, para a leitura à distância (projetor). */
+.qr {
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #dce4dc;
+  border-radius: 16px;
+}
+
+.qr svg {
+  display: block;
+  width: 280px;
+  max-width: 100%;
+  height: auto;
+}
+
+.link {
+  margin: 0;
+  align-self: stretch;
+  color: #5c6c65;
+  font-size: 0.9375rem;
+  text-align: center;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}

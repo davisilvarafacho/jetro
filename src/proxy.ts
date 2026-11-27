@@ -4,8 +4,10 @@ import { decrypt } from '@/lib/session'
 export async function proxy(req: NextRequest) {
   const session = await decrypt(req.cookies.get('session')?.value)
   const isLogin = req.nextUrl.pathname === '/login'
+  // Página de presença por QR Code: o aluno chega sem login.
+  const isPublicCheckIn = req.nextUrl.pathname.startsWith('/presenca/')
 
-  if (!session && !isLogin) return NextResponse.redirect(new URL('/login', req.url))
+  if (!session && !isLogin && !isPublicCheckIn) return NextResponse.redirect(new URL('/login', req.url))
   return NextResponse.next()
 }
 

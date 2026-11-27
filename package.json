@@ -23,6 +23,7 @@
     "dotenv": "^18.0.10",
     "jose": "^6.2.17",
     "next": "16.4.6",
+    "qrcode.react": "4.2.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "^0.0.1",

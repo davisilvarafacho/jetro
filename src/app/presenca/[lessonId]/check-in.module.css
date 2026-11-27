@@ -1,0 +1,79 @@
+/* Página pública de presença: cabe numa tela de celular sem rolagem horizontal. */
+.page {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 16px;
+  background: #ecf1ea;
+  color: #1a2a24;
+}
+
+.card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 440px;
+  padding: 28px 24px;
+  background: #ffffff;
+  border-radius: 22px;
+}
+
+.lesson {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-bricolage), var(--font-figtree), sans-serif;
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.details {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.details div {
+  display: grid;
+  gap: 2px;
+}
+
+.details dt {
+  color: #5c6c65;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.details dd {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* CPF com algarismos tabulares, como no resto do sistema. */
+.cpf {
+  font-variant-numeric: tabular-nums;
+}
+
+.alert {
+  width: 100%;
+}
