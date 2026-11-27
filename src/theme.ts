@@ -56,5 +56,6 @@ export const theme = createTheme({
     TextInput: { defaultProps: { size: 'md' } },
     PasswordInput: { defaultProps: { size: 'md' } },
     Select: { defaultProps: { size: 'md' } },
+    MultiSelect: { defaultProps: { size: 'md' } },
   },
 });

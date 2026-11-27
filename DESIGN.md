@@ -24,11 +24,7 @@ colors:
   avatar: "#D9E8DE"
   on-avatar: "#1D4A3C"
   flag: "#C9472A"
-  on-flag: "#FFFFFF"
   flag-container: "#FDEBE4"
-  on-flag-container: "#9A331C"
-  flag-avatar: "#F8CDBE"
-  on-flag-avatar: "#8A2C16"
   danger: "#C42D3A"
   on-danger: "#FFFFFF"
   danger-container: "#FDECEE"
@@ -203,9 +199,6 @@ components:
     padding: 12px 20px
   table-row-hover:
     backgroundColor: "{colors.row-hover}"
-  table-row-unled:
-    backgroundColor: "{colors.flag-container}"
-    textColor: "{colors.on-flag-container}"
   member-name:
     textColor: "{colors.ink}"
     typography: "{typography.name}"
@@ -220,24 +213,6 @@ components:
     textColor: "{colors.on-avatar}"
     rounded: "{rounded.full}"
     size: 34px
-  avatar-unled:
-    backgroundColor: "{colors.flag-avatar}"
-    textColor: "{colors.on-flag-avatar}"
-  badge-sem-lider:
-    backgroundColor: "{colors.flag}"
-    textColor: "{colors.on-flag}"
-    typography: "{typography.label-md}"
-    rounded: "{rounded.full}"
-    height: 34px
-  filter-chip:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink-2}"
-    typography: "{typography.label-md}"
-    rounded: "{rounded.full}"
-    height: 42px
-  filter-chip-active:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.on-primary}"
   drawer:
     backgroundColor: "{colors.surface}"
     rounded: "{rounded.lg}"
@@ -304,12 +279,13 @@ components:
 ## Overview
 
 **Pastoral.** O JETRO nasce de Êxodo 18: Jetro aconselha Moisés a designar líderes de mil, cem,
-cinquenta e dez. A interface existe para mostrar a rede de cuidado — quem cuida de quem, e quem
-ainda não tem ninguém cuidando dele.
+cinquenta e dez. A interface existe para mostrar a rede de cuidado — quem lidera e quem participa
+de cada ministério e célula, e quem é parça de quem.
 
 O tom é acolhedor e calmo, nunca corporativo nem kitsch religioso. Um fundo sálvia claro sustenta
 painéis brancos de cantos generosos; o verde-floresta é a única cor de ação; o coral existe só
-para um sinal: **membro sem líder**. Linhas altas, avatares com iniciais e nomes em destaque fazem
+para um sinal: o **bloqueio de exclusão** (membro que ainda lidera um grupo ou é parça de alguém).
+Linhas altas, avatares com iniciais e nomes em destaque fazem
 a lista parecer um rol de pessoas, não uma planilha.
 
 Público: liderança e secretaria da igreja, usando num notebook. Toda a interface em português do
@@ -324,11 +300,10 @@ Brasil, com texto simples e direto.
 - **Surface-tint (#F4F8F4):** blocos agrupados dentro de superfícies brancas (grupo "Cuidado" no
   formulário, lista de dependentes no modal, cartão do usuário no menu).
 - **Ink (#1A2A24) / Ink-2 (#35453F) / Muted (#5C6C65):** texto principal, secundário e de apoio.
-- **Flag (#C9472A) — coral:** exclusivo para "sem líder" — selo, fundo da linha
-  (`flag-container`), avatar (`flag-avatar`) e o ícone do modal de exclusão bloqueada. Nunca usar
-  coral para outra coisa.
+- **Flag (#C9472A) — coral:** exclusivo para o ícone do modal de exclusão bloqueada
+  (`flag` sobre `flag-container`). Nunca usar coral para outra coisa.
 - **Danger (#C42D3A):** erros de validação, alerta de login inválido e o botão de excluir. Não
-  confundir com o coral: vermelho é erro do usuário; coral é uma pessoa precisando de cuidado.
+  confundir com o coral: vermelho é erro do usuário; coral é um vínculo que impede a ação.
 - **Login-panel (#1D4A3D):** painel esquerdo do login, com o versículo.
 
 ## Typography
@@ -351,12 +326,11 @@ CPF usa algarismos tabulares (`font-variant-numeric: tabular-nums`) e sempre apa
   ícones de 80px, escondendo textos e o nome do usuário.
 - **Cabeçalho da página:** título `display` + subtítulo `muted` à esquerda, ação principal
   ("Novo membro") à direita, alinhados pela base; 28px até a barra de busca/filtros.
-- **Barra:** chips de filtro (Todos / Sem líder, com contagem) à esquerda, busca em pílula de
-  340px à direita.
+- **Barra:** busca em pílula de 340px à direita.
 - **Tabela:** dentro de um cartão branco; linhas de 72px; colunas Membro (avatar + nome + CPF),
-  Líder, Parça, ações à direita.
-- **Formulários:** drawer à direita, 520px. CPF sozinho, Nome e Sobrenome lado a lado, e um grupo
-  tingido com Líder e Parça.
+  Parça, Lidera, Participa, ações à direita.
+- **Formulários:** drawer à direita, 520px. CPF sozinho, Nome e Sobrenome lado a lado, e dois grupos
+  tingidos: Cuidado (Parça) e Participação (Ministérios e Células).
 - **Login:** duas colunas — painel verde com marca, árvore abstrata da rede e Êxodo 18:21;
   formulário de 392px centralizado no lado sálvia.
 - Ritmo em múltiplos de 4px; espaçamentos mais usados 8, 16, 20, 24, 28.
@@ -386,15 +360,14 @@ conforme a seção Shapes, `defaultRadius: 'md'`.
   Ministérios; cartão do usuário no rodapé com nome e botão "Sair".
 - **Botões:** `Button` com `radius="xl"`; primário `filled`, secundário `default`/`outline`,
   excluir `color="red"`. `ActionIcon` `variant="subtle"` para editar/excluir na linha.
-- **Campos:** `TextInput`, `PasswordInput`, `Select` com `searchable` e `clearable` para Líder,
-  Parça e líder do ministério. Altura 48px. Asterisco vermelho nos obrigatórios. Erro abaixo do
+- **Campos:** `TextInput`, `PasswordInput`, `Select` com `searchable` e `clearable` para Parça
+  e para o líder de ministério ou célula; `MultiSelect` com `searchable` para vincular ministérios e
+  células. Todos os campos têm altura 48px (tamanho `md`, definido por componente em `theme.ts`:
+  um componente novo de campo precisa entrar lá). Asterisco vermelho nos obrigatórios. Erro abaixo do
   campo, em `caption` vermelho.
-- **Tabela:** `Table` dentro de `Paper`. Pessoa = `Avatar` com iniciais + nome + CPF. Líder e
-  parça = pílula com mini-avatar e nome; vazio = travessão cinza.
-- **Sem líder:** a linha inteira em `flag-container`, avatar coral, e um `Badge` coral "Sem líder"
-  no lugar do líder, com um atalho "Escolher líder" que abre o formulário.
-- **Filtros:** `Chip`s (ou `SegmentedControl`) "Todos" e "Sem líder" com contagem; o de "Sem
-  líder" tem a contagem em coral.
+- **Tabela:** `Table` dentro de `Paper`. Pessoa = `Avatar` com iniciais + nome + CPF. Parça =
+  pílula com mini-avatar e nome; vazio = travessão cinza. Lidera e Participa = pílulas com o
+  ícone do tipo (ministério ou célula).
 - **Formulário:** `Drawer` `position="right"`, 520px, título `headline-md` e subtítulo; rodapé
   fixo com "Cancelar" e "Salvar".
 - **Exclusão bloqueada:** `Modal` de 540px com ícone em círculo coral, título, a frase completa e
@@ -407,13 +380,12 @@ conforme a seção Shapes, `defaultRadius: 'md'`.
 **Faça**
 
 - Use frase neutra ao falar de uma pessoa, sempre pelo nome: "Não é possível excluir Carlos
-  Mendes: Carlos Mendes é líder de Ana Souza e João Lima, parça de Pedro Alves e líder do
+  Mendes: Carlos Mendes é parça de Pedro Alves e líder do
   ministério Louvor. Troque esses vínculos antes de excluir." Nunca "ele"/"ela" — não há campo de
   gênero.
-- Reserve o coral para "sem líder". Quem está no topo da rede (o pastor) também aparece como sem
-  líder — isso é aceito; não existe marcação de "topo".
+- Reserve o coral para o bloqueio de exclusão.
 - Mantenha uma ação principal por tela, em verde-floresta.
-- Escreva rótulos curtos e concretos: "Novo membro", "Salvar", "Escolher líder".
+- Escreva rótulos curtos e concretos: "Novo membro", "Salvar", "Cancelar".
 - Mostre o CPF sempre mascarado e com algarismos tabulares.
 
 **Não faça**
@@ -421,5 +393,5 @@ conforme a seção Shapes, `defaultRadius: 'md'`.
 - Não use cruzes, pombas, vitrais ou outro imaginário religioso decorativo; o versículo no login
   basta.
 - Não use sombras pesadas em cartões fixos, nem gradientes.
-- Não use vermelho para "sem líder" nem coral para erros.
+- Não use coral para erros.
 - Não coloque a barra "Telas" do protótipo no produto — é só andaime de demonstração.

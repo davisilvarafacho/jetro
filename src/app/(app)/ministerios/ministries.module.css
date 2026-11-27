@@ -115,3 +115,10 @@
     padding-inline: 14px;
   }
 }
+
+/* Rodapé da lista: o spinner (ou o botão de nova tentativa) marca onde a rolagem pede mais. */
+.more {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}

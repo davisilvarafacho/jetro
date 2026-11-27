@@ -1,30 +1,45 @@
 'use client'
 
-import { useState } from 'react'
-import { ActionIcon, Button, Table, Title, VisuallyHidden } from '@mantine/core'
+import { useCallback, useState } from 'react'
+import { ActionIcon, Button, Loader, Table, Title, VisuallyHidden } from '@mantine/core'
 import { IconUsersGroup, IconPencil, IconPlus } from '@tabler/icons-react'
 import { PersonPill } from '@/components/person'
 import { fullName } from '@/lib/person-name'
+import { useInfiniteList } from '@/lib/use-infinite-list'
+import { loadGroups } from '../lookups'
 import { DeleteCell } from './delete-cell'
 import { CellDrawer, type CellRow } from './cell-drawer'
 import classes from './cells.module.css'
 
-type Member = { id: number; firstName: string; lastName: string }
 type Drawer = { open: boolean; cell: CellRow | null }
 
 export function CellsView({
-  cells,
-  members,
+  initial,
+  initialHasMore,
+  total,
 }: {
-  cells: CellRow[]
-  members: Member[]
+  initial: CellRow[]
+  initialHasMore: boolean
+  total: number
 }) {
   const [drawer, setDrawer] = useState<Drawer>({ open: false, cell: null })
 
+  // Rolagem infinita: o próximo lote vem do servidor, 25 por vez.
+  const fetchPage = useCallback(
+    (last: CellRow | null) => loadGroups('cell', last ? { name: last.name } : undefined),
+    [],
+  )
+  const { items, hasMore, failed, retry, sentinel } = useInfiniteList({
+    initial,
+    initialHasMore,
+    fetchPage,
+    errorMessage: 'Não foi possível carregar mais células.',
+  })
+
   const subtitle =
-    cells.length === 0
+    total === 0
       ? 'Nenhuma célula cadastrada ainda'
-      : `${cells.length} ${cells.length === 1 ? 'célula' : 'células'}`
+      : `${total} ${total === 1 ? 'célula' : 'células'}`
 
   return (
     <>
@@ -44,7 +59,7 @@ export function CellsView({
       </header>
 
       <div className={classes.card}>
-        {cells.length === 0 ? (
+        {items.length === 0 ? (
           <p className={classes.empty}>Nenhuma célula cadastrada ainda.</p>
         ) : (
           <Table className={classes.table} verticalSpacing={0} horizontalSpacing={0}>
@@ -58,7 +73,7 @@ export function CellsView({
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {cells.map((c) => (
+              {items.map((c) => (
                 <Table.Tr key={c.id} className={classes.row}>
                   <Table.Td>
                     <div className={classes.who}>
@@ -92,12 +107,22 @@ export function CellsView({
             </Table.Tbody>
           </Table>
         )}
+        {hasMore && (
+          <div ref={sentinel} className={classes.more}>
+            {failed ? (
+              <Button variant="subtle" onClick={retry}>
+                Tentar de novo
+              </Button>
+            ) : (
+              <Loader size="sm" aria-label="Carregando mais células" />
+            )}
+          </div>
+        )}
       </div>
 
       <CellDrawer
         opened={drawer.open}
         cell={drawer.cell}
-        members={members}
         onClose={() => setDrawer((d) => ({ ...d, open: false }))}
       />
     </>

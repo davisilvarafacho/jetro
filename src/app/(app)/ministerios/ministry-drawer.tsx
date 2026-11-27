@@ -1,26 +1,34 @@
 'use client'
 
 import { useActionState, useState } from 'react'
-import { Button, Drawer, Select, TextInput } from '@mantine/core'
+import { Button, Drawer, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { GroupMembersField, type GroupMemberEntry } from '@/components/group-members-field'
+import { EMPTY_DRAFT, GroupMembersField, type GroupMemberDraft } from '@/components/group-members-field'
+import { RemoteSelect } from '@/components/remote-select'
+import type { GroupRow } from '@/lib/groups'
+import type { PersonRef } from '@/lib/members'
 import { fullName } from '@/lib/person-name'
+import { searchMembers } from '../lookups'
 import { saveMinistry, type MinistryFormState } from './actions'
 import classes from './ministry-drawer.module.css'
 
-type PersonRef = { id: number; firstName: string; lastName: string }
-export type MinistryRow = {
-  id: number
-  name: string
-  leader: PersonRef
-  members: GroupMemberEntry[]
-}
+export type MinistryRow = GroupRow
+
+const personValue = (p: PersonRef) => String(p.id)
+const personLabel = (p: PersonRef) => fullName(p)
+
+// Busca de líder: 25 membros por vez, com busca no servidor.
+const fetchMembers = (q: string, last: PersonRef | null) =>
+  searchMembers({
+    q,
+    after: last ? { firstName: last.firstName, lastName: last.lastName, id: last.id } : undefined,
+  })
 
 const initialState: MinistryFormState = {}
 
-type FormProps = { ministry: MinistryRow | null; members: PersonRef[]; onClose: () => void }
+type FormProps = { ministry: MinistryRow | null; onClose: () => void }
 
-function MinistryForm({ ministry, members, onClose }: FormProps) {
+function MinistryForm({ ministry, onClose }: FormProps) {
   const [state, formAction, pending] = useActionState(
     async (prev: MinistryFormState, formData: FormData) => {
       const result = await saveMinistry(prev, formData)
@@ -34,8 +42,9 @@ function MinistryForm({ ministry, members, onClose }: FormProps) {
   )
   // Campos controlados: a ação reinicia o formulário e apagaria o que foi digitado quando há erro.
   const [name, setName] = useState(ministry?.name ?? '')
-  const [leaderId, setLeaderId] = useState<string | null>(ministry ? String(ministry.leader.id) : null)
-  const [entries, setEntries] = useState<GroupMemberEntry[]>(ministry?.members ?? [])
+  const [leader, setLeader] = useState<PersonRef | null>(ministry?.leader ?? null)
+  // A lista de membros é paginada: o formulário guarda só o que foi mudado nela.
+  const [draft, setDraft] = useState<GroupMemberDraft>(EMPTY_DRAFT)
   // Esconde o erro de um campo assim que ele é editado; volta a valer no próximo envio.
   const [edited, setEdited] = useState<{ state: MinistryFormState; fields: string[] }>({
     state,
@@ -45,8 +54,6 @@ function MinistryForm({ ministry, members, onClose }: FormProps) {
     setEdited((e) => ({ state, fields: e.state === state ? [...e.fields, field] : [field] }))
   const errorFor = (field: keyof NonNullable<MinistryFormState['errors']>) =>
     edited.state === state && edited.fields.includes(field) ? undefined : state.errors?.[field]
-
-  const options = members.map((m) => ({ value: String(m.id), label: fullName(m) }))
 
   return (
     <form action={formAction} className={classes.form} noValidate>
@@ -64,42 +71,36 @@ function MinistryForm({ ministry, members, onClose }: FormProps) {
           }}
           error={errorFor('name')}
         />
-        {members.length === 0 ? (
-          <p className={classes.notice} role="status">
-            Cadastre um membro antes de criar um ministério.
-          </p>
-        ) : (
-          <Select
-            label="Líder"
-            name="leaderId"
-            withAsterisk
-            description="Escolha entre os membros cadastrados."
-            placeholder="Escolha um membro"
-            nothingFoundMessage="Nenhum membro encontrado"
-            data={options}
-            value={leaderId}
-            onChange={(value) => {
-              setLeaderId(value)
-              touch('leaderId')
-            }}
-            error={errorFor('leaderId')}
-            searchable
-          />
-        )}
-        {members.length > 0 && (
-          <GroupMembersField
-            candidates={members}
-            leaderId={leaderId}
-            value={entries}
-            onChange={setEntries}
-          />
-        )}
+        <RemoteSelect
+          label="Líder"
+          name="leaderId"
+          withAsterisk
+          description="Escolha entre os membros cadastrados."
+          placeholder="Escolha um membro"
+          nothingFoundMessage="Nenhum membro encontrado"
+          fetchPage={fetchMembers}
+          getValue={personValue}
+          getLabel={personLabel}
+          value={leader}
+          onChange={(value) => {
+            setLeader(value)
+            touch('leaderId')
+          }}
+          error={errorFor('leaderId')}
+        />
+        <GroupMembersField
+          kind="ministry"
+          groupId={ministry?.id ?? null}
+          leader={leader}
+          draft={draft}
+          onChange={setDraft}
+        />
       </div>
       <div className={classes.footer}>
         <Button variant="default" type="button" onClick={onClose}>
           Cancelar
         </Button>
-        <Button type="submit" loading={pending} disabled={members.length === 0}>
+        <Button type="submit" loading={pending}>
           Salvar
         </Button>
       </div>
@@ -110,11 +111,10 @@ function MinistryForm({ ministry, members, onClose }: FormProps) {
 type DrawerProps = {
   opened: boolean
   ministry: MinistryRow | null
-  members: PersonRef[]
   onClose: () => void
 }
 
-export function MinistryDrawer({ opened, ministry, members, onClose }: DrawerProps) {
+export function MinistryDrawer({ opened, ministry, onClose }: DrawerProps) {
   return (
     <Drawer.Root
       className={classes.root}
@@ -140,7 +140,6 @@ export function MinistryDrawer({ opened, ministry, members, onClose }: DrawerPro
           <MinistryForm
             key={ministry?.id ?? 'new'}
             ministry={ministry}
-            members={members}
             onClose={onClose}
           />
         </Drawer.Body>

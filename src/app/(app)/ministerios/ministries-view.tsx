@@ -1,30 +1,45 @@
 'use client'
 
-import { useState } from 'react'
-import { ActionIcon, Button, Table, Title, VisuallyHidden } from '@mantine/core'
+import { useCallback, useState } from 'react'
+import { ActionIcon, Button, Loader, Table, Title, VisuallyHidden } from '@mantine/core'
 import { IconHeart, IconPencil, IconPlus } from '@tabler/icons-react'
 import { PersonPill } from '@/components/person'
 import { fullName } from '@/lib/person-name'
+import { useInfiniteList } from '@/lib/use-infinite-list'
+import { loadGroups } from '../lookups'
 import { DeleteMinistry } from './delete-ministry'
 import { MinistryDrawer, type MinistryRow } from './ministry-drawer'
 import classes from './ministries.module.css'
 
-type Member = { id: number; firstName: string; lastName: string }
 type Drawer = { open: boolean; ministry: MinistryRow | null }
 
 export function MinistriesView({
-  ministries,
-  members,
+  initial,
+  initialHasMore,
+  total,
 }: {
-  ministries: MinistryRow[]
-  members: Member[]
+  initial: MinistryRow[]
+  initialHasMore: boolean
+  total: number
 }) {
   const [drawer, setDrawer] = useState<Drawer>({ open: false, ministry: null })
 
+  // Rolagem infinita: o próximo lote vem do servidor, 25 por vez.
+  const fetchPage = useCallback(
+    (last: MinistryRow | null) => loadGroups('ministry', last ? { name: last.name } : undefined),
+    [],
+  )
+  const { items, hasMore, failed, retry, sentinel } = useInfiniteList({
+    initial,
+    initialHasMore,
+    fetchPage,
+    errorMessage: 'Não foi possível carregar mais ministérios.',
+  })
+
   const subtitle =
-    ministries.length === 0
+    total === 0
       ? 'Nenhum ministério cadastrado ainda'
-      : `${ministries.length} ${ministries.length === 1 ? 'ministério' : 'ministérios'}`
+      : `${total} ${total === 1 ? 'ministério' : 'ministérios'}`
 
   return (
     <>
@@ -44,7 +59,7 @@ export function MinistriesView({
       </header>
 
       <div className={classes.card}>
-        {ministries.length === 0 ? (
+        {items.length === 0 ? (
           <p className={classes.empty}>Nenhum ministério cadastrado ainda.</p>
         ) : (
           <Table className={classes.table} verticalSpacing={0} horizontalSpacing={0}>
@@ -58,7 +73,7 @@ export function MinistriesView({
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {ministries.map((m) => (
+              {items.map((m) => (
                 <Table.Tr key={m.id} className={classes.row}>
                   <Table.Td>
                     <div className={classes.who}>
@@ -92,12 +107,22 @@ export function MinistriesView({
             </Table.Tbody>
           </Table>
         )}
+        {hasMore && (
+          <div ref={sentinel} className={classes.more}>
+            {failed ? (
+              <Button variant="subtle" onClick={retry}>
+                Tentar de novo
+              </Button>
+            ) : (
+              <Loader size="sm" aria-label="Carregando mais ministérios" />
+            )}
+          </div>
+        )}
       </div>
 
       <MinistryDrawer
         opened={drawer.open}
         ministry={drawer.ministry}
-        members={members}
         onClose={() => setDrawer((d) => ({ ...d, open: false }))}
       />
     </>

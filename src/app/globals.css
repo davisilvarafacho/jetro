@@ -6,3 +6,10 @@ body {
 .mantine-Input-wrapper {
   --input-height-md: calc(3rem * var(--mantine-scale));
 }
+
+/* MultiSelect é multilinha: o padding vertical padrão do Mantine (7px) foi feito para 42px. Com
+   48px o texto ficava 3px acima do centro; 10px = (48 - 2 de borda - 26 da linha) / 2 centraliza
+   placeholder e pílulas. */
+.mantine-MultiSelect-input {
+  padding-block: calc(0.625rem * var(--mantine-scale));
+}

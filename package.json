@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "create-user": "tsx scripts/create-user.ts",
+    "seed": "tsx scripts/seed.ts",
     "db:migrate": "prisma migrate dev",
     "postinstall": "prisma generate"
   },
@@ -28,6 +29,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.6.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

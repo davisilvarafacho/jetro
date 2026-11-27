@@ -1,12 +1,14 @@
 'use client'
 
-import { useActionState, useState } from 'react'
-import { Button, Drawer, MultiSelect, Select, TextInput } from '@mantine/core'
+import { useActionState, useCallback, useMemo, useState } from 'react'
+import { Button, Drawer, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { GroupKindMark } from '@/components/group-kind-mark'
+import { RemoteMultiSelect, RemoteSelect } from '@/components/remote-select'
 import { formatCpf, onlyDigits } from '@/lib/cpf'
 import { fullName } from '@/lib/person-name'
-import type { MemberRow } from '@/lib/members'
+import type { GroupOption } from '@/lib/groups'
+import type { MemberRow, PersonRef } from '@/lib/members'
+import { searchGroups, searchMembers } from '../lookups'
 import { saveMember, type MemberFormState } from './actions'
 import classes from './member-drawer.module.css'
 
@@ -22,17 +24,19 @@ function maskCpf(value: string) {
 
 const initialState: MemberFormState = {}
 
-export type GroupOption = { id: number; name: string }
+const personValue = (p: PersonRef) => String(p.id)
+const personLabel = (p: PersonRef) => fullName(p)
+const groupValue = (g: GroupOption) => String(g.id)
+const groupLabel = (g: GroupOption) => g.name
 
-type FormProps = {
-  member: MemberRow | null
-  members: MemberRow[]
-  ministries: GroupOption[]
-  cells: GroupOption[]
-  onClose: () => void
-}
+// Busca de ministérios ou células para o seletor, sem os que a pessoa (selfId) lidera.
+const groupFetcher =
+  (kind: 'ministry' | 'cell', selfId: number | undefined) => (q: string, last: GroupOption | null) =>
+    searchGroups(kind, { q, after: last ? { name: last.name } : undefined, excludeLeaderId: selfId })
 
-function MemberForm({ member, members, ministries, cells, onClose }: FormProps) {
+type FormProps = { member: MemberRow | null; onClose: () => void }
+
+function MemberForm({ member, onClose }: FormProps) {
   const [state, formAction, pending] = useActionState(
     async (prev: MemberFormState, formData: FormData) => {
       const result = await saveMember(prev, formData)
@@ -48,13 +52,12 @@ function MemberForm({ member, members, ministries, cells, onClose }: FormProps) 
   const [cpf, setCpf] = useState(member ? maskCpf(member.cpf) : '')
   const [firstName, setFirstName] = useState(member?.firstName ?? '')
   const [lastName, setLastName] = useState(member?.lastName ?? '')
-  const [leaderId, setLeaderId] = useState<string | null>(member?.leader ? String(member.leader.id) : null)
-  const [parcaId, setParcaId] = useState<string | null>(member?.parca ? String(member.parca.id) : null)
+  const [parca, setParca] = useState<PersonRef | null>(member?.parca ?? null)
   // Participação: só os vínculos de sublíder/membro; os grupos que a pessoa lidera ficam de fora.
-  const participatingIds = (kind: 'ministry' | 'cell') =>
-    member?.participates.filter((g) => g.kind === kind).map((g) => String(g.id)) ?? []
-  const [ministryIds, setMinistryIds] = useState<string[]>(() => participatingIds('ministry'))
-  const [cellIds, setCellIds] = useState<string[]>(() => participatingIds('cell'))
+  const participating = (kind: 'ministry' | 'cell') =>
+    member?.participates.filter((g) => g.kind === kind).map(({ id, name }) => ({ id, name })) ?? []
+  const [ministries, setMinistries] = useState<GroupOption[]>(() => participating('ministry'))
+  const [cells, setCells] = useState<GroupOption[]>(() => participating('cell'))
   // Esconde o erro de um campo assim que ele é editado; volta a valer no próximo envio.
   const [edited, setEdited] = useState<{ state: MemberFormState; fields: string[] }>({ state, fields: [] })
   const touch = (field: string) =>
@@ -62,13 +65,20 @@ function MemberForm({ member, members, ministries, cells, onClose }: FormProps) 
   const errorFor = (field: keyof NonNullable<MemberFormState['errors']>) =>
     edited.state === state && edited.fields.includes(field) ? undefined : state.errors?.[field]
 
-  const options = members
-    .filter((m) => m.id !== member?.id)
-    .map((m) => ({ value: String(m.id), label: fullName(m) }))
-
-  const led = new Set((member?.leads ?? []).map((g) => `${g.kind}-${g.id}`))
-  const groupData = (kind: 'ministry' | 'cell', groups: GroupOption[]) =>
-    groups.filter((g) => !led.has(`${kind}-${g.id}`)).map((g) => ({ value: String(g.id), label: g.name }))
+  // Opções vêm do servidor, 25 por vez. Fora delas: a própria pessoa (não é parça de si mesma) e os
+  // grupos que ela lidera.
+  const selfId = member?.id
+  const fetchMembers = useCallback(
+    (q: string, last: PersonRef | null) =>
+      searchMembers({
+        q,
+        after: last ? { firstName: last.firstName, lastName: last.lastName, id: last.id } : undefined,
+        excludeIds: selfId ? [selfId] : undefined,
+      }),
+    [selfId],
+  )
+  const fetchMinistries = useMemo(() => groupFetcher('ministry', selfId), [selfId])
+  const fetchCells = useMemo(() => groupFetcher('cell', selfId), [selfId])
 
   return (
     <form action={formAction} className={classes.form} noValidate>
@@ -116,72 +126,47 @@ function MemberForm({ member, members, ministries, cells, onClose }: FormProps) 
         </div>
         <div className={classes.group}>
           <h3 className={classes.groupTitle}>Cuidado</h3>
-          <Select
-            label="Líder"
-            name="leaderId"
-            description="Quem cuida desta pessoa"
-            placeholder="Escolha um membro"
-            nothingFoundMessage="Nenhum membro encontrado"
-            data={options}
-            value={leaderId}
-            onChange={(value) => {
-              setLeaderId(value)
-              touch('leaderId')
-            }}
-            error={errorFor('leaderId')}
-            searchable
-            clearable
-          />
-          <Select
+          <RemoteSelect
             label="Parça"
             name="parcaId"
             description="Um segundo líder, mais pessoal: sabe da vida, amigos, família, por onde anda"
             placeholder="Escolha um membro"
             nothingFoundMessage="Nenhum membro encontrado"
-            data={options}
-            value={parcaId}
+            fetchPage={fetchMembers}
+            getValue={personValue}
+            getLabel={personLabel}
+            value={parca}
             onChange={(value) => {
-              setParcaId(value)
+              setParca(value)
               touch('parcaId')
             }}
             error={errorFor('parcaId')}
-            searchable
             clearable
           />
         </div>
         <div className={classes.group}>
           <h3 className={classes.groupTitle}>Participação</h3>
-          {member && member.leads.length > 0 && (
-            <p className={classes.led}>
-              <span className={classes.ledLabel}>Lidera:</span>{' '}
-              {member.leads.map((g, i) => (
-                <span key={`${g.kind}-${g.id}`}>
-                  {i > 0 && ', '}
-                  <GroupKindMark kind={g.kind} />
-                  {g.name}
-                </span>
-              ))}
-            </p>
-          )}
-          <MultiSelect
+          <RemoteMultiSelect
             label="Ministérios"
             name="ministryIds"
-            placeholder={ministryIds.length ? undefined : 'Busque um ministério'}
+            placeholder={ministries.length ? undefined : 'Busque um ministério'}
             nothingFoundMessage="Nenhum ministério encontrado"
-            data={groupData('ministry', ministries)}
-            value={ministryIds}
-            onChange={setMinistryIds}
-            searchable
+            fetchPage={fetchMinistries}
+            getValue={groupValue}
+            getLabel={groupLabel}
+            value={ministries}
+            onChange={setMinistries}
           />
-          <MultiSelect
+          <RemoteMultiSelect
             label="Células"
             name="cellIds"
-            placeholder={cellIds.length ? undefined : 'Busque uma célula'}
+            placeholder={cells.length ? undefined : 'Busque uma célula'}
             nothingFoundMessage="Nenhuma célula encontrada"
-            data={groupData('cell', cells)}
-            value={cellIds}
-            onChange={setCellIds}
-            searchable
+            fetchPage={fetchCells}
+            getValue={groupValue}
+            getLabel={groupLabel}
+            value={cells}
+            onChange={setCells}
           />
         </div>
       </div>
@@ -200,13 +185,10 @@ function MemberForm({ member, members, ministries, cells, onClose }: FormProps) 
 type DrawerProps = {
   opened: boolean
   member: MemberRow | null
-  members: MemberRow[]
-  ministries: GroupOption[]
-  cells: GroupOption[]
   onClose: () => void
 }
 
-export function MemberDrawer({ opened, member, members, ministries, cells, onClose }: DrawerProps) {
+export function MemberDrawer({ opened, member, onClose }: DrawerProps) {
   return (
     <Drawer.Root
       className={classes.root}
@@ -223,20 +205,13 @@ export function MemberDrawer({ opened, member, members, ministries, cells, onClo
               {member ? 'Editar membro' : 'Novo membro'}
             </Drawer.Title>
             <p className={classes.subtitle}>
-              {member ? fullName(member) : 'Cadastre uma pessoa e escolha quem cuida dela.'}
+              {member ? fullName(member) : 'Cadastre uma pessoa e escolha o parça dela.'}
             </p>
           </div>
           <Drawer.CloseButton aria-label="Fechar" />
         </Drawer.Header>
         <Drawer.Body className={classes.body}>
-          <MemberForm
-            key={member?.id ?? 'new'}
-            member={member}
-            members={members}
-            ministries={ministries}
-            cells={cells}
-            onClose={onClose}
-          />
+          <MemberForm key={member?.id ?? 'new'} member={member} onClose={onClose} />
         </Drawer.Body>
       </Drawer.Content>
     </Drawer.Root>

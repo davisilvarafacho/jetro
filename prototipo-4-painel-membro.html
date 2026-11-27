@@ -1,0 +1,330 @@
+<!doctype html>
+<!-- Protótipo 4: painel do membro. Mesma família do prototipo-3-pastoral.html e dos tokens do DESIGN.md.
+     A faixa "Exemplo:" no topo é andaime de demonstração e não faz parte do produto. -->
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>JETRO · Painel do membro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+ --font-body:'Figtree',system-ui,sans-serif;--font-head:'Bricolage Grotesque','Figtree',system-ui,sans-serif;
+ --primary:#21594A;--primary-hover:#194536;--primary-soft:#DFEDE4;
+ --bg:#ECF1EA;--surface:#FFFFFF;--surface-tint:#F4F8F4;--surface-hover:#EAF1EB;--row-hover:#F8FAF8;--pill:#F0F5F1;
+ --ink:#1A2A24;--ink-2:#35453F;--muted:#5C6C65;--line:#DCE4DC;--line-soft:#EDF1ED;--input-line:#C5D1C8;--input-line-hover:#9FB1A5;
+ --avatar:#D9E8DE;--on-avatar:#1D4A3C;
+ --r-sm:12px;--r-nav:14px;--r-md:16px;--r-lg:22px;
+ --strip:52px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--font-body);font-size:16px;line-height:1.5;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font:inherit;color:inherit;cursor:pointer}
+h1,h2,h3,p,dl,dd,ul{margin:0}
+ul{padding:0;list-style:none}
+a{color:inherit}
+svg.i{width:1em;height:1em;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.num{font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ===== faixa de exemplos (andaime do protótipo, fora do app) ===== */
+#exemplos{position:sticky;top:0;z-index:20;height:var(--strip);display:flex;align-items:center;gap:4px;padding:4px 12px;background:#1b1b1d;font:500 13px/1 system-ui,sans-serif;overflow-x:auto;scrollbar-width:none}
+#exemplos::-webkit-scrollbar{display:none}
+#exemplos span{color:#a1a1a8;padding:0 8px 0 4px;white-space:nowrap}
+#exemplos button{flex:none;height:44px;padding:0 14px;border:0;border-radius:8px;background:transparent;color:#d4d4d8;font:inherit;white-space:nowrap}
+#exemplos button:hover{background:#34343a}
+#exemplos button[aria-pressed="true"]{background:#f4f4f5;color:#111}
+#exemplos button:focus-visible{outline:2px solid #f4f4f5;outline-offset:1px}
+
+/* ===== shell (igual ao protótipo 3 / app-shell.tsx) ===== */
+.shell{display:grid;grid-template-columns:256px minmax(0,1fr);gap:20px;padding:16px;min-height:calc(100vh - var(--strip))}
+.side{position:sticky;top:calc(var(--strip) + 16px);height:calc(100vh - var(--strip) - 32px);display:flex;flex-direction:column;padding:22px 16px 18px;background:var(--surface);border-radius:var(--r-lg);box-shadow:0 1px 0 rgba(26,42,36,.04)}
+.brand{display:flex;align-items:center;gap:12px;padding:0 6px}
+.brand .mk{width:40px;height:40px;border-radius:13px;background:var(--primary);color:#fff;display:grid;place-items:center;flex:none}
+.brand .mk svg{width:24px;height:24px}
+.brand b{font-family:var(--font-head);font-weight:700;font-size:1.375rem;letter-spacing:.02em}
+.nav{display:flex;flex-direction:column;gap:6px;margin-top:34px}
+.nav a{display:flex;align-items:center;gap:12px;height:48px;padding:0 14px;border-radius:var(--r-nav);color:var(--ink-2);text-decoration:none;font-weight:500;transition:background .12s}
+.nav a .i{width:21px;height:21px;color:var(--muted)}
+.nav a:hover{background:var(--surface-hover)}
+.nav a[aria-current="page"]{background:var(--primary-soft);color:var(--primary);font-weight:600}
+.nav a[aria-current="page"] .i{color:var(--primary)}
+.me{margin-top:auto;padding:16px;background:var(--surface-tint);border-radius:18px;display:grid;gap:14px}
+.me .p{display:flex;align-items:center;gap:12px}
+.me b{display:block;font-weight:600;line-height:1.2}
+.me small{color:var(--muted);font-size:.875rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 22px;border-radius:999px;border:1px solid transparent;font-weight:600;font-size:.9375rem;line-height:1;white-space:nowrap;text-decoration:none;transition:background .12s,border-color .12s,transform .08s}
+.btn:active{transform:translateY(1px)}
+.btn .i{width:18px;height:18px}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-outline{background:var(--surface);border-color:var(--input-line);color:var(--ink)}
+.btn-outline:hover{background:var(--surface-hover)}
+.me .btn{height:44px;width:100%}
+.main{min-width:0;padding:12px 24px 56px 8px}
+
+/* ===== avatar e pílulas ===== */
+.av{display:inline-grid;place-items:center;flex:none;border-radius:50%;background:var(--avatar);color:var(--on-avatar);font-weight:600;letter-spacing:.02em}
+.av-sm{width:26px;height:26px;font-size:.6875rem}
+.av-lg{width:44px;height:44px;font-size:1rem}
+.av-xl{width:72px;height:72px;font-size:1.5rem}
+.pill{position:relative;display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px 0 4px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:500;font-size:.9375rem;white-space:nowrap;text-decoration:none;transition:background .12s,border-color .12s}
+a.pill:hover{background:var(--surface-hover);border-color:var(--input-line-hover)}
+a.pill::after{content:"";position:absolute;inset:-6px -2px}  /* alvo de 44px sem mudar a pílula de 34px */
+.dash{color:#9AAAA2}
+
+/* ===== cabeçalho do painel ===== */
+.back{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 14px 0 10px;margin-left:-10px;border-radius:999px;color:var(--muted);font-weight:600;font-size:.9375rem;text-decoration:none;transition:background .12s,color .12s}
+.back .i{width:18px;height:18px}
+.back:hover{background:var(--surface-hover);color:var(--ink)}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-top:12px}
+.who{display:flex;align-items:center;gap:20px;min-width:0}
+h1{font-family:var(--font-head);font-weight:600;font-size:2.5rem;line-height:1.05;letter-spacing:-.025em;overflow-wrap:anywhere}
+.cpf{margin-top:8px;color:var(--muted);font-size:1.0625rem}
+.cpf .num{color:var(--ink-2)}
+.care{display:flex;flex-wrap:wrap;gap:12px 32px;margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
+.care div{display:flex;align-items:center;gap:12px;min-width:0}
+.care dt{color:var(--muted);font-size:.875rem;font-weight:600}
+.care dd{display:flex;align-items:center;gap:4px;min-width:0}
+
+/* ===== seções ===== */
+.sec{margin-top:40px}
+.sec-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.sec-h h2{font-family:var(--font-head);font-weight:600;font-size:1.0625rem;line-height:1.3}
+.count{display:inline-grid;place-items:center;min-width:26px;height:24px;padding:0 8px;border-radius:12px;background:var(--surface);color:var(--ink-2);font-size:.8125rem;font-weight:600;font-variant-numeric:tabular-nums}
+.empty{padding:20px 24px;border-radius:var(--r-lg);background:var(--surface);color:var(--muted);box-shadow:0 1px 0 rgba(26,42,36,.04)}
+
+/* tile do tipo (ministério = coração, célula = grupo) */
+.kind{display:grid;place-items:center;flex:none;border-radius:var(--r-sm);background:var(--primary-soft);color:var(--primary)}
+.kind-sm{width:36px;height:36px}
+.kind-sm .i{width:19px;height:19px}
+
+/* mini dashboard: indicadores do membro */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:16px;margin-top:28px}
+.stat{display:flex;flex-direction:column;gap:16px;padding:20px 22px;border-radius:var(--r-lg);background:var(--surface);box-shadow:0 1px 0 rgba(26,42,36,.04)}
+.stat-top{display:flex;align-items:center;gap:12px;color:var(--ink-2);font-weight:600;font-size:.9375rem}
+.stat-n{display:flex;align-items:baseline;gap:10px;font-family:var(--font-head);font-weight:600;font-size:3rem;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.stat-n small{font-family:var(--font-body);font-size:.9375rem;font-weight:500;letter-spacing:0;color:var(--muted)}
+.stat-n.zero{color:#9AAAA2}
+.stat-foot{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:auto;min-height:28px}
+.chip{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:999px;background:var(--pill);color:var(--ink-2);font-size:.875rem;font-weight:500;font-variant-numeric:tabular-nums}
+.chip-lead{background:var(--primary-soft);color:var(--primary);font-weight:600}
+.chip-zero{color:var(--muted)}
+.stack{display:flex}
+.stack .av{width:28px;height:28px;font-size:.6875rem;border:2px solid var(--surface)}
+.stack .av + .av{margin-left:-8px}
+.roles{margin-top:16px;padding:20px 22px;border-radius:var(--r-lg);background:var(--surface);box-shadow:0 1px 0 rgba(26,42,36,.04)}
+.roles-h{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.roles-h b{font-weight:600;font-size:.9375rem;color:var(--ink-2)}
+.roles-h span{color:var(--muted);font-size:.875rem;font-variant-numeric:tabular-nums}
+.bar{display:flex;gap:3px;height:14px;margin-top:14px;border-radius:7px;overflow:hidden;background:var(--line-soft)}
+.bar i{display:block;min-width:6px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:14px}
+.legend li{display:flex;align-items:center;gap:8px;font-size:.9375rem;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.legend li i{width:10px;height:10px;border-radius:3px;flex:none}
+.legend li b{font-weight:700;color:var(--ink)}
+.c-lider{background:var(--primary)}.c-sub{background:#6FA48F}.c-membro{background:#BFD3C7}
+.pills{display:flex;flex-wrap:wrap;gap:10px}
+.more{display:inline-flex;align-items:center;height:34px;padding:0 14px;border-radius:999px;background:var(--pill);color:var(--ink-2);font-weight:600;font-size:.9375rem;font-variant-numeric:tabular-nums}
+
+/* Lidera e Participa: lista agrupada */
+.list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));border-radius:var(--r-lg);background:var(--surface);overflow:hidden;box-shadow:0 1px 0 rgba(26,42,36,.04)}
+.grp + .grp{border-left:1px solid var(--line)}
+.grp h3{padding:16px 20px 12px;color:var(--muted);font-size:.875rem;font-weight:600;border-bottom:1px solid var(--line)}
+.grp li + li{border-top:1px solid var(--line-soft)}
+.row{display:flex;align-items:center;gap:14px;min-height:64px;padding:10px 20px;text-decoration:none;transition:background .12s}
+.row:hover{background:var(--row-hover)}
+.row .n{flex:1;min-width:0;font-weight:600;font-size:1.0625rem;line-height:1.25;overflow-wrap:anywhere}
+.role{flex:none;font-size:.875rem;font-weight:500;color:var(--muted)}
+.role.sub{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:999px;background:var(--primary-soft);color:var(--primary);font-weight:600}
+
+/* ===== trilho de ícones abaixo de 1100px (como o app) ===== */
+@media (max-width:1099.98px){
+ .shell{grid-template-columns:80px minmax(0,1fr);gap:14px;padding:12px}
+ .side{top:calc(var(--strip) + 12px);height:calc(100vh - var(--strip) - 24px);padding:18px 10px;align-items:center}
+ .brand{padding:0}
+ .brand b,.txt,.me .pt{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+ .nav a{width:52px;justify-content:center;padding:0}
+ .me{padding:10px;background:transparent}
+ .me .btn{width:44px;height:44px;padding:0}
+ .main{padding:4px 12px 48px 4px}
+ h1{font-size:2.125rem}
+}
+/* ===== celular: o menu vira barra no topo ===== */
+@media (max-width:599.98px){
+ .shell{grid-template-columns:minmax(0,1fr);align-content:start;gap:16px;padding:12px}
+ .side{position:static;height:auto;flex-direction:row;align-items:center;gap:4px;padding:8px}
+ .brand .mk{width:36px;height:36px;border-radius:12px}
+ .nav{flex-direction:row;gap:4px;margin:0 0 0 8px}
+ .nav a{width:44px;height:44px}
+ .me{margin:0 0 0 auto;padding:0;display:flex}
+ .me .p{display:none}
+ .main{padding:0 4px 40px}
+ .head{flex-direction:column;align-items:stretch;gap:20px}
+ .who{gap:14px}
+ .av-xl{width:56px;height:56px;font-size:1.1875rem}
+ h1{font-size:1.75rem;letter-spacing:-.02em}
+ .cpf{font-size:1rem;margin-top:4px}
+ .head .btn{width:100%}
+ .care{flex-direction:column;gap:12px}
+ .care dt{min-width:52px}
+ .sec{margin-top:32px}
+ .stats{margin-top:20px;gap:12px;grid-template-columns:1fr 1fr}
+ .stat{padding:16px;gap:12px}
+ .stat-top{font-size:.875rem;gap:8px}
+ .stat-top .kind{display:none}
+ .stat-n{font-size:2.5rem}
+ .grp + .grp{border-left:0;border-top:1px solid var(--line)}
+ .row{padding:10px 16px;gap:12px}
+ .grp h3{padding:14px 16px 10px}
+}
+</style></head><body>
+<nav id="exemplos" aria-label="Exemplos do protótipo"><span>Exemplo:</span></nav>
+<div id="app"></div>
+<script>
+/* ===== dados fictícios: mesma forma de MemberRow em src/lib/members.ts ===== */
+const EXEMPLOS={
+ a:{rotulo:'Lidera e participa',nome:'Carlos',sobrenome:'Mendes',cpf:'40322022495',
+  parca:{nome:'Rafael',sobrenome:'Teixeira'},
+  lidera:[{tipo:'ministério',nome:'Louvor',membros:12},{tipo:'célula',nome:'Jovens',membros:9},{tipo:'célula',nome:'Pampulha',membros:7}],
+  participa:[{tipo:'ministério',nome:'Jovens',papel:'sublíder'},{tipo:'ministério',nome:'Diaconia',papel:'membro'},{tipo:'ministério',nome:'Escola Dominical',papel:'membro'},
+   {tipo:'célula',nome:'Homens de Oração',papel:'sublíder'},{tipo:'célula',nome:'Castelo',papel:'membro'}],
+  parcaDe:[['Lucas','Prado'],['Bruno','Seixas'],['Tiago','Ramos'],['Mateus','Bastos']].map(([nome,sobrenome])=>({nome,sobrenome}))},
+ b:{rotulo:'Só participa',nome:'Ana',sobrenome:'Souza',cpf:'67305235300',
+  parca:{nome:'Marta',sobrenome:'Figueiredo'},
+  lidera:[],
+  participa:[{tipo:'ministério',nome:'Louvor',papel:'sublíder'},{tipo:'ministério',nome:'Diaconia',papel:'membro'},{tipo:'célula',nome:'Jovens',papel:'membro'}],
+  parcaDe:[{nome:'Davi',sobrenome:'Cunha'}]},
+ c:{rotulo:'Sem vínculos',nome:'João',sobrenome:'Lima',cpf:'42183489448',
+  parca:{nome:'Ana',sobrenome:'Souza'},
+  lidera:[],participa:[],parcaDe:[]},
+ d:{rotulo:'Parça de muitos',nome:'Helena',sobrenome:'Castro',cpf:'69304099013',
+  parca:null,
+  lidera:[{tipo:'ministério',nome:'Escola Dominical',membros:18},{tipo:'célula',nome:'Castelo',membros:8}],
+  participa:[{tipo:'ministério',nome:'Diaconia',papel:'membro'}],
+  parcaDe:[['Lucas','Prado'],['Bruno','Seixas'],['Tiago','Ramos'],['Mateus','Bastos'],['Rute','Amaral'],['Paulo','Neves'],['Sara','Lacerda'],['Caio','Vieira'],['Lívia','Moraes'],['Elias','Cardoso'],['Joana','Pires'],['Noé','Rezende']].map(([nome,sobrenome])=>({nome,sobrenome}))}
+};
+const USER={nome:'Débora Rangel',papel:'Secretaria'};
+
+/* ===== ícones Tabler (outline) ===== */
+const P={
+ users:'<path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/>',
+ church:'<path d="M3 21l18 0"/><path d="M10 21v-4a2 2 0 0 1 4 0v4"/><path d="M10 5l4 0"/><path d="M12 3l0 5"/><path d="M6 21v-7m-2 2l8 -8l8 8m-2 -2v7"/>',
+ heart:'<path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572"/>',
+ group:'<path d="M10 13a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M8 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1"/><path d="M15 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M17 10h2a2 2 0 0 1 2 2v1"/><path d="M5 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M3 13v-1a2 2 0 0 1 2 -2h2"/>',
+ handshake:'<path d="M3 12l3 3l4 -4l2 2l-3 3l3 3"/><path d="M21 12l-3 3l-4 -4"/><path d="M12 8l2 -2l6 6"/><path d="M12 8l-2 -2l-7 7"/>',
+ back:'<path d="M5 12l14 0"/><path d="M5 12l6 6"/><path d="M5 12l6 -6"/>',
+ pencil:'<path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4"/><path d="M13.5 6.5l4 4"/>',
+ logout:'<path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"/><path d="M9 12h12l-3 -3"/><path d="M18 15l3 -3"/>'
+};
+const icon=n=>`<svg class="i" aria-hidden="true" viewBox="0 0 24 24">${P[n]}</svg>`;
+const MARK='<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 7v3M12 10H5v4M12 10h7v4M12 10v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="5" r="2.6" fill="currentColor"/><circle cx="5" cy="17" r="2.6" fill="currentColor"/><circle cx="12" cy="17" r="2.6" fill="currentColor"/><circle cx="19" cy="17" r="2.6" fill="currentColor"/></svg>';
+
+/* ===== utilidades ===== */
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nome=m=>m.nome+' '+m.sobrenome;
+const ini=m=>(m.nome[0]+m.sobrenome[0]).toUpperCase();
+const cpf=v=>v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');
+const ehMin=g=>g.tipo==='ministério';
+const tipoRotulo=g=>ehMin(g)?'Ministério':'Célula';
+const pessoas=n=>n+(n===1?' pessoa':' pessoas');
+const porNome=(a,b)=>a.nome.localeCompare(b.nome,'pt-BR');
+const kind=(g,c)=>`<span class="kind ${c}" aria-hidden="true" title="${tipoRotulo(g)}">${icon(ehMin(g)?'heart':'group')}</span>`;
+
+/* ===== partes da tela ===== */
+function shell(inner){
+ const L=[['Membros','users',true],['Ministérios','church'],['Células','group']];
+ return `<div class="shell"><aside class="side"><div class="brand"><span class="mk">${MARK}</span><b>JETRO</b></div>
+  <nav class="nav" aria-label="Principal">${L.map(x=>`<a href="#"${x[2]?' aria-current="page"':''}>${icon(x[1])}<span class="txt">${x[0]}</span></a>`).join('')}</nav>
+  <div class="me"><div class="p"><span class="av av-lg" aria-hidden="true">DR</span><div class="pt"><b>${USER.nome}</b><small>${USER.papel}</small></div></div>
+   <button type="button" class="btn btn-outline">${icon('logout')}<span class="txt">Sair</span></button></div></aside>
+  <main class="main" id="conteudo">${inner}</main></div>`}
+
+function pessoaPill(p){return `<a class="pill" href="#">${`<span class="av av-sm" aria-hidden="true">${ini(p)}</span>`}${esc(nome(p))}</a>`}
+
+function cabecalho(m){
+ const parca=m.parca?pessoaPill(m.parca):'<span class="dash" aria-hidden="true">—</span><span class="sr-only">Sem parça</span>';
+ return `<a class="back" href="#">${icon('back')}<span><span class="sr-only">Voltar para </span>Membros</span></a>
+  <header>
+   <div class="head">
+    <div class="who"><span class="av av-xl" aria-hidden="true">${ini(m)}</span>
+     <div style="min-width:0"><h1>${esc(nome(m))}</h1><p class="cpf">CPF <span class="num">${cpf(m.cpf)}</span></p></div></div>
+    <button type="button" class="btn btn-primary">${icon('pencil')}Editar membro</button>
+   </div>
+   <dl class="care"><div><dt>Parça</dt><dd>${parca}</dd></div></dl>
+  </header>`}
+
+/* indicadores: tudo derivado dos vínculos (lidera, participa) e de quem tem este membro como parça */
+function indicadores(m){
+ const cnt=(arr,f)=>arr.filter(f).length;
+ const ministerios={lidera:cnt(m.lidera,ehMin),participa:cnt(m.participa,ehMin)};
+ const celulas={lidera:cnt(m.lidera,g=>!ehMin(g)),participa:cnt(m.participa,g=>!ehMin(g))};
+ const alcance=m.lidera.reduce((s,g)=>s+g.membros,0);
+ const papeis={lider:m.lidera.length,sub:cnt(m.participa,g=>g.papel==='sublíder'),membro:cnt(m.participa,g=>g.papel!=='sublíder')};
+ return {ministerios,celulas,alcance,papeis,total:papeis.lider+papeis.sub+papeis.membro};
+}
+function tileGrupo(titulo,ic,d){
+ const n=d.lidera+d.participa;
+ return `<li class="stat"><div class="stat-top"><span class="kind kind-sm" aria-hidden="true">${icon(ic)}</span>${titulo}</div>
+  <p class="stat-n${n?'':' zero'}">${n}</p>
+  <div class="stat-foot"><span class="chip ${d.lidera?'chip-lead':'chip-zero'}">Lidera ${d.lidera}</span><span class="chip ${d.participa?'':'chip-zero'}">Participa ${d.participa}</span></div></li>`}
+function painel(m){
+ const k=indicadores(m),np=m.parcaDe.length;
+ const stack=m.parcaDe.slice(0,4).map(p=>`<span class="av" aria-hidden="true">${ini(p)}</span>`).join('');
+ const barra=k.total
+  ?`<div class="bar" aria-hidden="true">${[['lider','Líder'],['sub','Sublíder'],['membro','Membro']].filter(([c])=>k.papeis[c]).map(([c])=>`<i class="c-${c}" style="flex:${k.papeis[c]}"></i>`).join('')}</div>
+    <ul class="legend">${[['lider','Líder'],['sub','Sublíder'],['membro','Membro']].map(([c,r])=>`<li><i class="c-${c}" aria-hidden="true"></i>${r} <b>${k.papeis[c]}</b></li>`).join('')}</ul>`
+  :`<p class="empty" style="margin-top:12px;padding:0;box-shadow:none">Nenhum vínculo ainda, então não há papéis para distribuir.</p>`;
+ return `<section aria-label="Indicadores de ${esc(nome(m))}">
+  <ul class="stats">
+   ${tileGrupo('Ministérios','heart',k.ministerios)}
+   ${tileGrupo('Células','group',k.celulas)}
+   <li class="stat"><div class="stat-top"><span class="kind kind-sm" aria-hidden="true">${icon('users')}</span>Sob sua liderança</div>
+    <p class="stat-n${k.alcance?'':' zero'}">${k.alcance}<small>${k.alcance===1?'pessoa':'pessoas'}</small></p>
+    <div class="stat-foot"><span class="chip ${m.lidera.length?'chip-lead':'chip-zero'}">em ${m.lidera.length} ${m.lidera.length===1?'grupo':'grupos'}</span></div></li>
+   <li class="stat"><div class="stat-top"><span class="kind kind-sm" aria-hidden="true">${icon('handshake')}</span>É parça de</div>
+    <p class="stat-n${np?'':' zero'}">${np}<small>${np===1?'pessoa':'pessoas'}</small></p>
+    <div class="stat-foot">${np?`<span class="stack">${stack}</span>`:'<span class="chip chip-zero">Ninguém ainda</span>'}</div></li>
+  </ul>
+  <div class="roles"><div class="roles-h"><b>Papéis nos vínculos</b><span class="num">${k.total} ${k.total===1?'vínculo':'vínculos'} no total</span></div>${barra}</div>
+ </section>`}
+
+function parcaDe(m){
+ const MAX=8,ps=[...m.parcaDe].sort(porNome),resto=ps.length-MAX;
+ const corpo=ps.length
+  ?`<div class="pills">${ps.slice(0,MAX).map(pessoaPill).join('')}${resto>0?`<span class="more">+${resto} ${resto===1?'outra':'outras'}</span>`:''}</div>`
+  :`<p class="empty">Ninguém tem ${esc(m.nome)} como parça ainda.</p>`;
+ return `<section class="sec" aria-labelledby="h-parca">${secHead('h-parca','É parça de',ps.length)}${corpo}</section>`}
+
+function secHead(id,titulo,n){return `<div class="sec-h"><h2 id="${id}">${titulo}</h2>${n?`<span class="count" aria-hidden="true">${n}</span><span class="sr-only">: ${n}</span>`:''}</div>`}
+
+function lidera(m){
+ const grupo=(titulo,itens)=>itens.length?`<div class="grp"><h3>${titulo}</h3><ul>${[...itens].sort(porNome).map(g=>
+   `<li><a class="row" href="#">${kind(g,'kind-sm')}<span class="n"><span class="sr-only">${tipoRotulo(g)}: </span>${esc(g.nome)}</span><span class="role num">${pessoas(g.membros)}</span></a></li>`).join('')}</ul></div>`:'';
+ const corpo=m.lidera.length
+  ?`<div class="list">${grupo('Ministérios',m.lidera.filter(ehMin))}${grupo('Células',m.lidera.filter(g=>!ehMin(g)))}</div>`
+  :`<p class="empty">${esc(nome(m))} ainda não lidera nenhum ministério nem célula.</p>`;
+ return `<section class="sec" aria-labelledby="h-lidera">${secHead('h-lidera','Lidera',m.lidera.length)}${corpo}</section>`}
+
+function participa(m){
+ const ordem=(a,b)=>(a.papel===b.papel?0:a.papel==='sublíder'?-1:1)||porNome(a,b);
+ const grupo=(titulo,itens)=>itens.length?`<div class="grp"><h3>${titulo}</h3><ul>${itens.sort(ordem).map(g=>
+   `<li><a class="row" href="#">${kind(g,'kind-sm')}<span class="n"><span class="sr-only">${tipoRotulo(g)}: </span>${esc(g.nome)}</span>${g.papel==='sublíder'?'<span class="role sub">Sublíder</span>':'<span class="role">Membro</span>'}</a></li>`).join('')}</ul></div>`:'';
+ const corpo=m.participa.length
+  ?`<div class="list">${grupo('Ministérios',m.participa.filter(ehMin))}${grupo('Células',m.participa.filter(g=>!ehMin(g)))}</div>`
+  :`<p class="empty">${esc(nome(m))} ainda não participa de nenhum ministério nem célula.</p>`;
+ return `<section class="sec" aria-labelledby="h-participa">${secHead('h-participa','Participa',m.participa.length)}${corpo}</section>`}
+
+/* ===== render e faixa de exemplos ===== */
+function atual(){const k=location.hash.slice(1);return EXEMPLOS[k]?k:'a'}
+function render(){const k=atual(),m=EXEMPLOS[k];
+ document.getElementById('app').innerHTML=shell(cabecalho(m)+painel(m)+lidera(m)+participa(m)+parcaDe(m));
+ document.querySelectorAll('#exemplos button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)))}
+document.getElementById('exemplos').insertAdjacentHTML('beforeend',
+ Object.entries(EXEMPLOS).map(([k,e])=>`<button type="button" data-k="${k}" aria-pressed="false">${e.rotulo}</button>`).join(''));
+document.getElementById('exemplos').addEventListener('click',e=>{const b=e.target.closest('button');if(b)history.replaceState(null,'','#'+b.dataset.k),render()});
+/* no protótipo os links do app não navegam */
+document.getElementById('app').addEventListener('click',e=>{if(e.target.closest('a[href="#"]'))e.preventDefault()});
+window.addEventListener('hashchange',render);
+render();
+</script></body></html>

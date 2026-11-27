@@ -10,7 +10,7 @@ import { roleLabel } from '@/lib/group-roles'
 import { deleteMember, getDeleteImpact, type DeleteImpact } from './actions'
 import classes from './delete-member.module.css'
 
-type Dependent = { id: number; name: string; kind: 'liderado' | 'parca' | 'ministerio' | 'celula' }
+type Dependent = { id: number; name: string; kind: 'parca' | 'ministerio' | 'celula' }
 type Blocked = { message: string; dependents: Dependent[] }
 type Memberships = Extract<DeleteImpact, { blocked: false }>['memberships']
 
@@ -79,7 +79,6 @@ export function DeleteMember({ id, name, iconClassName, onOpenMember }: Props) {
   }
 
   const group = (kind: Dependent['kind']) => blocked?.dependents.filter((d) => d.kind === kind) ?? []
-  const liderados = group('liderado')
   const parcaDe = group('parca')
   const ministerios = group('ministerio')
   const celulas = group('celula')
@@ -157,16 +156,6 @@ export function DeleteMember({ id, name, iconClassName, onOpenMember }: Props) {
             <Modal.Title className={classes.blockTitle}>Não é possível excluir</Modal.Title>
             <p className={classes.blockText}>{blocked?.message}</p>
             <div className={classes.deps}>
-              {liderados.length > 0 && (
-                <div>
-                  <h3 className={classes.depsLabel}>Líder de</h3>
-                  <div className={classes.depsList}>
-                    {liderados.map((d) => (
-                      <PersonPill key={d.id} name={d.name} onClick={() => openMember(d.id)} />
-                    ))}
-                  </div>
-                </div>
-              )}
               {parcaDe.length > 0 && (
                 <div>
                   <h3 className={classes.depsLabel}>Parça de</h3>

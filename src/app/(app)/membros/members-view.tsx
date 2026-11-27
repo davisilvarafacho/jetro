@@ -1,60 +1,89 @@
 'use client'
 
-import { useState } from 'react'
-import { ActionIcon, Badge, Button, Table, TextInput, Title, VisuallyHidden } from '@mantine/core'
-import { IconAlertTriangle, IconPencil, IconPlus, IconSearch } from '@tabler/icons-react'
+import { useCallback, useEffect, useState, useTransition } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import {
+  ActionIcon,
+  Button,
+  Loader,
+  Table,
+  TextInput,
+  Title,
+  VisuallyHidden,
+} from '@mantine/core'
+import { IconLayoutDashboard, IconPencil, IconPlus, IconSearch } from '@tabler/icons-react'
 import { GroupKindMark } from '@/components/group-kind-mark'
 import { Initials, PersonPill } from '@/components/person'
-import { onlyDigits, formatCpf } from '@/lib/cpf'
+import { formatCpf } from '@/lib/cpf'
 import { GROUP_ROLE } from '@/lib/group-roles'
 import { fullName } from '@/lib/person-name'
 import type { MemberRow } from '@/lib/members'
+import { useInfiniteList } from '@/lib/use-infinite-list'
+import { loadMember, loadMoreMembers } from './actions'
 import { DeleteMember } from './delete-member'
-import { MemberDrawer, type GroupOption } from './member-drawer'
+import { MemberDrawer } from './member-drawer'
 import classes from './members.module.css'
-
-function normalize(text: string) {
-  return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
-}
 
 type Drawer = { open: boolean; member: MemberRow | null }
 
-export function MembersView({
-  members,
-  ministries,
-  cells,
-}: {
-  members: MemberRow[]
-  ministries: GroupOption[]
-  cells: GroupOption[]
-}) {
-  const [onlyUnled, setOnlyUnled] = useState(false)
-  const [query, setQuery] = useState('')
+// A busca mora na URL: o servidor devolve a primeira página já filtrada.
+function listUrl(q: string) {
+  return q.trim() ? `/membros?${new URLSearchParams({ q: q.trim() })}` : '/membros'
+}
+
+type Props = {
+  initial: MemberRow[]
+  initialHasMore: boolean
+  q: string
+  total: number
+}
+
+export function MembersView({ initial, initialHasMore, q, total }: Props) {
+  const router = useRouter()
+  const [navigating, startNavigation] = useTransition()
+  const [query, setQuery] = useState(q)
   const [drawer, setDrawer] = useState<Drawer>({ open: false, member: null })
 
-  const unledCount = members.filter((m) => !m.leader).length
-
-  const text = normalize(query.trim())
-  const digits = onlyDigits(query)
-  const visible = members.filter((m) => {
-    if (onlyUnled && m.leader) return false
-    if (!text) return true
-    return normalize(fullName(m)).includes(text) || (digits !== '' && m.cpf.includes(digits))
+  // Rolagem infinita: o próximo lote vem do servidor com a mesma busca da página.
+  const fetchPage = useCallback(
+    (last: MemberRow | null) =>
+      loadMoreMembers({
+        q,
+        after: last ? { firstName: last.firstName, lastName: last.lastName, id: last.id } : undefined,
+      }),
+    [q],
+  )
+  const { items, hasMore, failed, retry, sentinel } = useInfiniteList({
+    initial,
+    initialHasMore,
+    fetchPage,
+    errorMessage: 'Não foi possível carregar mais membros.',
   })
+
+  // Digitar na busca atualiza a URL depois de uma pausa.
+  useEffect(() => {
+    if (query.trim() === q) return
+    const timer = setTimeout(() => {
+      startNavigation(() => router.replace(listUrl(query), { scroll: false }))
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [query, q, router])
 
   function openDrawer(member: MemberRow | null) {
     setDrawer({ open: true, member })
   }
 
-  function openMemberById(id: number) {
-    const member = members.find((m) => m.id === id)
+  // O membro pode estar fora das páginas já carregadas; nesse caso busca no servidor.
+  async function openMemberById(id: number) {
+    const member = items.find((m) => m.id === id) ?? (await loadMember(id))
     if (member) openDrawer(member)
   }
 
   const subtitle =
-    members.length === 0
+    total === 0
       ? 'Nenhuma pessoa cadastrada ainda'
-      : `${members.length} ${members.length === 1 ? 'pessoa' : 'pessoas'}, ${unledCount} sem líder`
+      : `${total} ${total === 1 ? 'pessoa' : 'pessoas'}`
 
   return (
     <>
@@ -71,47 +100,29 @@ export function MembersView({
       </header>
 
       <div className={classes.bar}>
-        <div className={classes.chips} role="group" aria-label="Filtro">
-          <button
-            type="button"
-            className={classes.chip}
-            aria-pressed={!onlyUnled}
-            onClick={() => setOnlyUnled(false)}
-          >
-            Todos <span className={classes.count}>{members.length}</span>
-          </button>
-          <button
-            type="button"
-            className={classes.chip}
-            aria-pressed={onlyUnled}
-            onClick={() => setOnlyUnled(true)}
-          >
-            Sem líder <span className={`${classes.count} ${classes.countFlag}`}>{unledCount}</span>
-          </button>
-        </div>
         <TextInput
           className={classes.search}
           type="search"
           radius="xl"
           placeholder="Buscar por nome ou CPF"
           aria-label="Buscar membro"
+          maxLength={100}
           leftSection={<IconSearch size={20} stroke={1.75} />}
           value={query}
           onChange={(event) => setQuery(event.currentTarget.value)}
         />
       </div>
 
-      <div className={classes.card}>
-        {visible.length === 0 ? (
+      <div className={navigating ? `${classes.card} ${classes.pending}` : classes.card}>
+        {items.length === 0 ? (
           <p className={classes.empty}>
-            {members.length === 0 ? 'Nenhum membro cadastrado ainda.' : 'Nenhum membro encontrado.'}
+            {total === 0 ? 'Nenhum membro cadastrado ainda.' : 'Nenhum membro encontrado.'}
           </p>
         ) : (
           <Table className={classes.table} verticalSpacing={0} horizontalSpacing={0}>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Membro</Table.Th>
-                <Table.Th>Líder</Table.Th>
                 <Table.Th>Parça</Table.Th>
                 <Table.Th>Lidera</Table.Th>
                 <Table.Th>Participa</Table.Th>
@@ -121,42 +132,18 @@ export function MembersView({
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {visible.map((m) => {
+              {items.map((m) => {
                 const name = fullName(m)
-                const unled = !m.leader
                 return (
-                  <Table.Tr key={m.id} className={`${classes.row} ${unled ? classes.unled : ''}`}>
+                  <Table.Tr key={m.id} className={classes.row}>
                     <Table.Td>
                       <div className={classes.who}>
-                        <Initials name={name} flagged={unled} />
+                        <Initials name={name} />
                         <div>
                           <span className={classes.name}>{name}</span>
                           <span className={classes.cpf}>{formatCpf(m.cpf)}</span>
                         </div>
                       </div>
-                    </Table.Td>
-                    <Table.Td>
-                      {m.leader ? (
-                        <PersonPill name={fullName(m.leader)} />
-                      ) : (
-                        <div className={classes.flagCell}>
-                          <Badge
-                            className={classes.flag}
-                            radius="xl"
-                            leftSection={<IconAlertTriangle size={16} stroke={1.75} />}
-                          >
-                            Sem líder
-                          </Badge>
-                          <Button
-                            variant="subtle"
-                            size="sm"
-                            className={classes.pick}
-                            onClick={() => openDrawer(m)}
-                          >
-                            Escolher líder
-                          </Button>
-                        </div>
-                      )}
                     </Table.Td>
                     <Table.Td>
                       {m.parca ? (
@@ -210,6 +197,16 @@ export function MembersView({
                     </Table.Td>
                     <Table.Td className={classes.actions}>
                       <ActionIcon
+                        component={Link}
+                        href={`/membros/${m.id}`}
+                        variant="subtle"
+                        className={classes.actionIcon}
+                        aria-label={`Ver painel de ${name}`}
+                        title="Painel"
+                      >
+                        <IconLayoutDashboard size={18} stroke={1.75} />
+                      </ActionIcon>
+                      <ActionIcon
                         variant="subtle"
                         className={classes.actionIcon}
                         aria-label={`Editar ${name}`}
@@ -231,14 +228,22 @@ export function MembersView({
             </Table.Tbody>
           </Table>
         )}
+        {hasMore && (
+          <div ref={sentinel} className={classes.more}>
+            {failed ? (
+              <Button variant="subtle" onClick={retry}>
+                Tentar de novo
+              </Button>
+            ) : (
+              <Loader size="sm" aria-label="Carregando mais membros" />
+            )}
+          </div>
+        )}
       </div>
 
       <MemberDrawer
         opened={drawer.open}
         member={drawer.member}
-        members={members}
-        ministries={ministries}
-        cells={cells}
         onClose={() => setDrawer((d) => ({ ...d, open: false }))}
       />
     </>

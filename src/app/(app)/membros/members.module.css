@@ -25,64 +25,9 @@
   margin-bottom: 16px;
 }
 
-.chips {
-  display: flex;
-  gap: 8px;
-  margin-inline-end: auto;
-}
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 42px;
-  padding: 0 18px;
-  border: 1px solid #dce4dc;
-  border-radius: 999px;
-  background: #ffffff;
-  color: #35453f;
-  font-family: inherit;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    background 0.12s,
-    border-color 0.12s;
-}
-
-.chip:hover {
-  background: #eaf1eb;
-}
-
-.chip[aria-pressed='true'] {
-  background: #21594a;
-  border-color: #21594a;
-  color: #ffffff;
-}
-
-.count {
-  display: inline-grid;
-  place-items: center;
-  min-width: 24px;
-  height: 22px;
-  padding: 0 6px;
-  border-radius: 11px;
-  background: rgba(26, 42, 36, 0.08);
-  font-size: 0.8125rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.chip[aria-pressed='true'] .count {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.chip .countFlag {
-  background: #c9472a;
-  color: #ffffff;
-}
-
 .search {
   width: 340px;
+  margin-inline-start: auto;
 }
 
 .card {
@@ -90,6 +35,19 @@
   border-radius: 22px;
   overflow: hidden;
   box-shadow: 0 1px 0 rgba(26, 42, 36, 0.04);
+}
+
+/* Busca ou filtro em andamento: a lista antiga fica visível, só mais apagada. */
+.pending {
+  opacity: 0.55;
+  transition: opacity 120ms;
+}
+
+/* Rodapé da lista: o spinner (ou o botão de nova tentativa) marca onde a rolagem pede mais. */
+.more {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
 }
 
 .table {
@@ -117,18 +75,6 @@
 
 .row:hover td {
   background: #f8faf8;
-}
-
-.table .unled {
-  --table-border-color: #f7d9cd;
-}
-
-.unled td {
-  background: #fdebe4;
-}
-
-.unled:hover td {
-  background: #fbe2d8;
 }
 
 .who {
@@ -183,34 +129,6 @@
   background: #f0f5f1;
   color: #1a2a24;
   font-weight: 500;
-}
-
-.flagCell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.flag {
-  height: 34px;
-  padding: 0 14px 0 11px;
-  background: #c9472a;
-  color: #ffffff;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-.pick {
-  height: 34px;
-  padding: 0 12px;
-  color: #9a331c;
-  font-size: 0.9375rem;
-}
-
-.pick:hover {
-  background: rgba(226, 89, 58, 0.14);
 }
 
 .actions {

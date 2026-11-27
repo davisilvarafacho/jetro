@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { Prisma } from '@/generated/prisma/client'
-import { parseGroupMembersField, saveGroupMembers } from '@/lib/group-members'
+import { applyGroupMemberChanges, parseGroupChangesField } from '@/lib/group-members'
 import { prisma } from '@/lib/prisma'
 import { requireUser } from '@/lib/session'
 
@@ -41,7 +41,7 @@ export async function saveMinistry(
 
   if (Object.keys(errors).length > 0 || !leader) return { errors }
 
-  const members = parseGroupMembersField(formData.get('members'))
+  const changes = parseGroupChangesField(formData.get('memberChanges'))
   const data = { name, leaderId: leader.id }
   try {
     await prisma.$transaction(async (tx) => {
@@ -53,10 +53,10 @@ export async function saveMinistry(
         id === null
           ? await tx.ministry.create({ data })
           : await tx.ministry.update({ where: { id }, data })
-      await saveGroupMembers(tx, 'ministry', saved.id, {
+      await applyGroupMemberChanges(tx, 'ministry', saved.id, {
         leaderId: leader.id,
         previousLeaderId: previous?.leaderId ?? null,
-        members,
+        changes,
       })
     })
   } catch (error) {

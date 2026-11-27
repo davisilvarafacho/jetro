@@ -20,9 +20,6 @@ model Member {
   cpf           String           @unique
   firstName     String
   lastName      String
-  leaderId      Int?
-  leader        Member?          @relation("Lideranca", fields: [leaderId], references: [id], onDelete: Restrict)
-  liderados     Member[]         @relation("Lideranca")
   parcaId       Int?
   parca         Member?          @relation("Parca", fields: [parcaId], references: [id], onDelete: Restrict)
   parcaDe       Member[]         @relation("Parca")

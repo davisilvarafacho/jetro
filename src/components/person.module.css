@@ -12,17 +12,20 @@
   white-space: nowrap;
 }
 
-button.pill {
+button.pill,
+.link {
   border: 1px solid #dce4dc;
   background: #ffffff;
   cursor: pointer;
   font-family: inherit;
+  text-decoration: none;
   transition:
     background 0.12s,
     border-color 0.12s;
 }
 
-button.pill:hover {
+button.pill:hover,
+.link:hover {
   background: #eaf1eb;
   border-color: #b9c9be;
 }

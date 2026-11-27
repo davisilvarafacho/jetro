@@ -9,15 +9,18 @@ import type { AssignableRole } from '@/lib/group-roles'
 import {
   blockedDeleteMessage,
   getDependents,
+  getMemberRow,
   getMemberships,
-  isInLeaderChainBelow,
+  listMembersPage,
   type Dependents,
+  type MemberRow,
+  type MembersPage,
 } from '@/lib/members'
 import { fullName } from '@/lib/person-name'
 import { prisma } from '@/lib/prisma'
 import { requireUser } from '@/lib/session'
 
-type Field = 'cpf' | 'firstName' | 'lastName' | 'leaderId' | 'parcaId'
+type Field = 'cpf' | 'firstName' | 'lastName' | 'parcaId'
 export type MemberFormState = { ok?: boolean; errors?: Partial<Record<Field, string>> }
 
 const schema = z.object({
@@ -66,6 +69,7 @@ async function existingGroupIds(
 // Os drawers de ministérios e células listam membros, então também dependem do cadastro.
 function revalidateMemberPages() {
   revalidatePath('/membros')
+  revalidatePath('/membros/[id]', 'page')
   revalidatePath('/ministerios')
   revalidatePath('/celulas')
 }
@@ -77,7 +81,6 @@ export async function saveMember(
   await requireUser()
 
   const id = optionalId(formData.get('id'))
-  const leaderId = optionalId(formData.get('leaderId'))
   const parcaId = optionalId(formData.get('parcaId'))
   const ministryIds = parseIds(formData.get('ministryIds'))
   const cellIds = parseIds(formData.get('cellIds'))
@@ -95,19 +98,7 @@ export async function saveMember(
     }
   }
 
-  if (id !== null && leaderId === id) errors.leaderId = 'Um membro não pode ser líder de si mesmo'
   if (id !== null && parcaId === id) errors.parcaId = 'Um membro não pode ser parça de si mesmo'
-  if (id !== null && leaderId !== null && leaderId !== id) {
-    if (await isInLeaderChainBelow(id, leaderId)) {
-      const candidate = await prisma.member.findUnique({
-        where: { id: leaderId },
-        select: { firstName: true, lastName: true },
-      })
-      if (candidate) {
-        errors.leaderId = `${fullName(candidate)} está abaixo deste membro na cadeia de liderança. Escolha outro líder.`
-      }
-    }
-  }
 
   if (parsed.success && !errors.cpf) {
     const other = await prisma.member.findUnique({
@@ -119,7 +110,7 @@ export async function saveMember(
 
   if (Object.keys(errors).length > 0 || !parsed.success) return { errors }
 
-  const data = { ...parsed.data, leaderId, parcaId }
+  const data = { ...parsed.data, parcaId }
   try {
     await prisma.$transaction(async (tx) => {
       const saved =
@@ -155,12 +146,11 @@ export type DeleteMemberResult =
   | {
       ok: false
       message: string
-      dependents: { id: number; name: string; kind: 'liderado' | 'parca' | 'ministerio' | 'celula' }[]
+      dependents: { id: number; name: string; kind: 'parca' | 'ministerio' | 'celula' }[]
     }
 
 function toDependentList(deps: Dependents) {
   return [
-    ...deps.liderados.map((d) => ({ ...d, kind: 'liderado' as const })),
     ...deps.parcaDe.map((d) => ({ ...d, kind: 'parca' as const })),
     ...deps.ministerios.map((d) => ({ ...d, kind: 'ministerio' as const })),
     ...deps.celulas.map((d) => ({ ...d, kind: 'celula' as const })),
@@ -215,4 +205,24 @@ export async function getDeleteImpact(id: number): Promise<DeleteImpact> {
   if (message) return { blocked: true, message, dependents: toDependentList(deps) }
 
   return { blocked: false, memberships: await getMemberships(id) }
+}
+
+const loadMoreSchema = z.object({
+  q: z.string().max(100),
+  after: z
+    .object({ firstName: z.string(), lastName: z.string(), id: z.number().int().positive() })
+    .optional(),
+})
+
+// Próxima página da rolagem infinita, com o mesmo filtro da página que o usuário está vendo.
+export async function loadMoreMembers(params: z.input<typeof loadMoreSchema>): Promise<MembersPage> {
+  await requireUser()
+  const { after, ...filter } = loadMoreSchema.parse(params)
+  return listMembersPage(filter, after)
+}
+
+// Um membro que pode não estar na lista carregada (ex.: parça citado no bloqueio de exclusão).
+export async function loadMember(id: number): Promise<MemberRow | null> {
+  await requireUser()
+  return getMemberRow(z.number().int().positive().parse(id))
 }

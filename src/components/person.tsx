@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { Avatar } from '@mantine/core'
 import classes from './person.module.css'
 
@@ -8,20 +9,19 @@ function initialsOf(name: string) {
   return (first + last).toUpperCase()
 }
 
-type InitialsProps = { name: string; size?: number; flagged?: boolean }
+type InitialsProps = { name: string; size?: number }
 
-// flagged = "sem líder": avatar coral (único uso permitido do coral além do selo).
-export function Initials({ name, size = 34, flagged = false }: InitialsProps) {
+export function Initials({ name, size = 34 }: InitialsProps) {
   return (
     <Avatar
       size={size}
       radius="xl"
       styles={{
         root: {
-          background: flagged ? '#F8CDBE' : '#D9E8DE',
-          color: flagged ? '#8A2C16' : '#1D4A3C',
+          background: '#D9E8DE',
+          color: '#1D4A3C',
           fontWeight: 600,
-          fontSize: size <= 26 ? 11 : 13,
+          fontSize: size <= 26 ? 11 : size >= 56 ? 24 : 13,
           letterSpacing: '0.02em',
         },
       }}
@@ -31,15 +31,22 @@ export function Initials({ name, size = 34, flagged = false }: InitialsProps) {
   )
 }
 
-type PersonPillProps = { name: string; onClick?: () => void }
+type PersonPillProps = { name: string; onClick?: () => void; href?: string }
 
-export function PersonPill({ name, onClick }: PersonPillProps) {
+export function PersonPill({ name, onClick, href }: PersonPillProps) {
   const content = (
     <>
       <Initials name={name} size={26} />
       {name}
     </>
   )
+  if (href) {
+    return (
+      <Link href={href} className={`${classes.pill} ${classes.link}`}>
+        {content}
+      </Link>
+    )
+  }
   if (onClick) {
     return (
       <button type="button" className={classes.pill} onClick={onClick}>
