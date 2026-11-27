@@ -27,6 +27,9 @@ export type Dependents = {
   parcaDe: { id: number; name: string }[]
   ministerios: { id: number; name: string }[]
   celulas: { id: number; name: string }[]
+  // Até DEPENDENT_LESSONS aulas (mais recentes primeiro), nomeadas "<aula> (<curso>)"; aulasTotal conta todas.
+  aulas: { id: number; name: string }[]
+  aulasTotal: number
 }
 
 const personRef = { select: { id: true, firstName: true, lastName: true } } as const
@@ -242,8 +245,10 @@ export async function searchMemberOptions({
   return { items: rows.slice(0, PAGE_SIZE), hasMore: rows.length > PAGE_SIZE }
 }
 
+const DEPENDENT_LESSONS = 20
+
 export async function getDependents(id: number): Promise<Dependents> {
-  const [parcaDe, ministerios, celulas] = await Promise.all([
+  const [parcaDe, ministerios, celulas, aulas, aulasTotal] = await Promise.all([
     prisma.member.findMany({
       where: { parcaId: id },
       orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
@@ -259,11 +264,20 @@ export async function getDependents(id: number): Promise<Dependents> {
       orderBy: { name: 'asc' },
       select: { id: true, name: true },
     }),
+    prisma.lesson.findMany({
+      where: { teacherId: id },
+      orderBy: [{ date: 'desc' }, { id: 'desc' }],
+      take: DEPENDENT_LESSONS,
+      select: { id: true, name: true, course: { select: { name: true } } },
+    }),
+    prisma.lesson.count({ where: { teacherId: id } }),
   ])
   return {
     parcaDe: parcaDe.map((m) => ({ id: m.id, name: fullName(m) })),
     ministerios,
     celulas,
+    aulas: aulas.map((l) => ({ id: l.id, name: `${l.name} (${l.course.name})` })),
+    aulasTotal,
   }
 }
 
@@ -312,6 +326,9 @@ export function blockedDeleteMessage(name: string, deps: Dependents): string | n
   if (deps.celulas.length) {
     const label = deps.celulas.length > 1 ? 'líder das células' : 'líder da célula'
     parts.push(`${label} ${joinPt(deps.celulas.map((d) => d.name))}`)
+  }
+  if (deps.aulasTotal) {
+    parts.push(deps.aulasTotal > 1 ? `professor de ${deps.aulasTotal} aulas` : 'professor da aula')
   }
   if (!parts.length) return null
   return `Não é possível excluir ${name}: ${name} é ${joinPt(parts)}. Troque esses vínculos antes de excluir.`

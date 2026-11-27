@@ -10,8 +10,8 @@ import { roleLabel } from '@/lib/group-roles'
 import { deleteMember, getDeleteImpact, type DeleteImpact } from './actions'
 import classes from './delete-member.module.css'
 
-type Dependent = { id: number; name: string; kind: 'parca' | 'ministerio' | 'celula' }
-type Blocked = { message: string; dependents: Dependent[] }
+type Dependent = { id: number; name: string; kind: 'parca' | 'ministerio' | 'celula' | 'aula' }
+type Blocked = { message: string; dependents: Dependent[]; aulasTotal: number }
 type Memberships = Extract<DeleteImpact, { blocked: false }>['memberships']
 
 type Props = {
@@ -41,7 +41,11 @@ export function DeleteMember({ id, name, iconClassName, onOpenMember }: Props) {
     try {
       const impact = await getDeleteImpact(id)
       if (impact.blocked) {
-        setBlocked({ message: impact.message, dependents: impact.dependents })
+        setBlocked({
+          message: impact.message,
+          dependents: impact.dependents,
+          aulasTotal: impact.aulasTotal,
+        })
         setMemberships([])
       } else {
         setBlocked(null)
@@ -66,7 +70,11 @@ export function DeleteMember({ id, name, iconClassName, onOpenMember }: Props) {
         notifications.show({ message: 'Membro excluído', color: 'floresta' })
         close()
       } else {
-        setBlocked({ message: result.message, dependents: result.dependents })
+        setBlocked({
+          message: result.message,
+          dependents: result.dependents,
+          aulasTotal: result.aulasTotal,
+        })
       }
     } catch {
       notifications.show({
@@ -82,6 +90,7 @@ export function DeleteMember({ id, name, iconClassName, onOpenMember }: Props) {
   const parcaDe = group('parca')
   const ministerios = group('ministerio')
   const celulas = group('celula')
+  const aulas = group('aula')
 
   function openMember(memberId: number) {
     close()
@@ -191,6 +200,21 @@ export function DeleteMember({ id, name, iconClassName, onOpenMember }: Props) {
                         {d.name}
                       </TextPill>
                     ))}
+                  </div>
+                </div>
+              )}
+              {aulas.length > 0 && (
+                <div>
+                  <h3 className={classes.depsLabel}>Aulas que leciona</h3>
+                  <div className={classes.depsList}>
+                    {aulas.map((d) => (
+                      <TextPill key={d.id} onClick={() => router.push('/aulas')}>
+                        {d.name}
+                      </TextPill>
+                    ))}
+                    {blocked && blocked.aulasTotal > aulas.length && (
+                      <p className={classes.hint}>e mais {blocked.aulasTotal - aulas.length}</p>
+                    )}
                   </div>
                 </div>
               )}

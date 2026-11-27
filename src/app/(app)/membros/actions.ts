@@ -72,6 +72,8 @@ function revalidateMemberPages() {
   revalidatePath('/membros/[id]', 'page')
   revalidatePath('/ministerios')
   revalidatePath('/celulas')
+  revalidatePath('/cursos')
+  revalidatePath('/aulas')
 }
 
 export async function saveMember(
@@ -146,7 +148,9 @@ export type DeleteMemberResult =
   | {
       ok: false
       message: string
-      dependents: { id: number; name: string; kind: 'parca' | 'ministerio' | 'celula' }[]
+      dependents: { id: number; name: string; kind: 'parca' | 'ministerio' | 'celula' | 'aula' }[]
+      // Quantas aulas ele leciona no total; a lista traz só as mais recentes.
+      aulasTotal: number
     }
 
 function toDependentList(deps: Dependents) {
@@ -154,6 +158,7 @@ function toDependentList(deps: Dependents) {
     ...deps.parcaDe.map((d) => ({ ...d, kind: 'parca' as const })),
     ...deps.ministerios.map((d) => ({ ...d, kind: 'ministerio' as const })),
     ...deps.celulas.map((d) => ({ ...d, kind: 'celula' as const })),
+    ...deps.aulas.map((d) => ({ ...d, kind: 'aula' as const })),
   ]
 }
 
@@ -171,7 +176,9 @@ export async function deleteMember(id: number): Promise<DeleteMemberResult> {
 
   const deps = await getDependents(id)
   const message = blockedDeleteMessage(fullName(member), deps)
-  if (message) return { ok: false, message, dependents: toDependentList(deps) }
+  if (message) {
+    return { ok: false, message, dependents: toDependentList(deps), aulasTotal: deps.aulasTotal }
+  }
 
   await prisma.member.delete({ where: { id } })
   revalidateMemberPages()
@@ -183,6 +190,7 @@ export type DeleteImpact =
       blocked: true
       message: string
       dependents: Extract<DeleteMemberResult, { ok: false }>['dependents']
+      aulasTotal: number
     }
   | {
       blocked: false
@@ -202,7 +210,14 @@ export async function getDeleteImpact(id: number): Promise<DeleteImpact> {
 
   const deps = await getDependents(id)
   const message = blockedDeleteMessage(fullName(member), deps)
-  if (message) return { blocked: true, message, dependents: toDependentList(deps) }
+  if (message) {
+    return {
+      blocked: true,
+      message,
+      dependents: toDependentList(deps),
+      aulasTotal: deps.aulasTotal,
+    }
+  }
 
   return { blocked: false, memberships: await getMemberships(id) }
 }
