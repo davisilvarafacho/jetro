@@ -205,6 +205,8 @@ export type MemberOptionQuery = {
   excludeIds?: number[]
   // …e quem já pertence a este grupo (o seletor "Adicionar membro" só oferece quem ainda não está).
   excludeFromGroup?: { kind: GroupKind; id: number }
+  // …ou quem já tem linha neste curso (inscrição) ou nesta aula (presença).
+  excludeFromSet?: { kind: 'enrollment' | 'attendance'; id: number }
 }
 
 // Página de membros para os selects: só o necessário para escolher uma pessoa, com busca no servidor.
@@ -213,6 +215,7 @@ export async function searchMemberOptions({
   after,
   excludeIds = [],
   excludeFromGroup,
+  excludeFromSet,
 }: MemberOptionQuery): Promise<Page<PersonRef>> {
   const extra: Prisma.MemberWhereInput[] = []
   if (excludeIds.length) extra.push({ id: { notIn: excludeIds } })
@@ -221,6 +224,13 @@ export async function searchMemberOptions({
       excludeFromGroup.kind === 'ministry'
         ? { ministryLinks: { none: { ministryId: excludeFromGroup.id } } }
         : { cellLinks: { none: { cellId: excludeFromGroup.id } } },
+    )
+  }
+  if (excludeFromSet) {
+    extra.push(
+      excludeFromSet.kind === 'enrollment'
+        ? { enrollments: { none: { courseId: excludeFromSet.id } } }
+        : { attendances: { none: { lessonId: excludeFromSet.id } } },
     )
   }
   const rows = await prisma.member.findMany({
