@@ -16,19 +16,22 @@ model User {
 }
 
 model Member {
-  id            Int              @id @default(autoincrement())
-  cpf           String           @unique
+  id            Int                @id @default(autoincrement())
+  cpf           String             @unique
   firstName     String
   lastName      String
   parcaId       Int?
-  parca         Member?          @relation("Parca", fields: [parcaId], references: [id], onDelete: Restrict)
-  parcaDe       Member[]         @relation("Parca")
+  parca         Member?            @relation("Parca", fields: [parcaId], references: [id], onDelete: Restrict)
+  parcaDe       Member[]           @relation("Parca")
   ministerios   Ministry[]
   celulas       Cell[]
   ministryLinks MinistryMember[]
   cellLinks     CellMember[]
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  enrollments   CourseEnrollment[]
+  lessonsTaught Lesson[]
+  attendances   LessonAttendance[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 }
 
 model Ministry {
@@ -71,4 +74,50 @@ model CellMember {
   role     Int    @default(3)
 
   @@unique([cellId, memberId])
+}
+
+model Course {
+  id          Int                @id @default(autoincrement())
+  name        String             @unique
+  enrollments CourseEnrollment[]
+  lessons     Lesson[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model CourseEnrollment {
+  id       Int    @id @default(autoincrement())
+  courseId Int
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  memberId Int
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, memberId])
+}
+
+model Lesson {
+  id          Int                @id @default(autoincrement())
+  name        String
+  courseId    Int
+  course      Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacherId   Int
+  teacher     Member             @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+  date        DateTime
+  attendances LessonAttendance[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([courseId])
+  @@index([teacherId])
+  @@index([date, id])
+}
+
+model LessonAttendance {
+  lessonId Int
+  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  memberId Int
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([lessonId, memberId])
+  @@index([memberId])
 }
